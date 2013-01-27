@@ -15,6 +15,26 @@
         padding-top: 60px;
         padding-bottom: 40px;
       }
+
+      .tempmonitors {
+        padding: 60px;
+        margin-bottom: 30px;
+        font-size: 18px;
+        font-weight: 200;
+        line-height: 30px;
+        color: inherit;
+        border-color: #EEEEEE;
+        -webkit-border-radius: 6px;
+           -moz-border-radius: 6px;
+                border-radius: 6px;
+      }
+
+      .tempmonitor {
+        font-size: 14px;
+        text-align: center;
+        display: inline-block;
+      }
+
     </style>
     <link href="css/bootstrap-responsive.css" rel="stylesheet">
 
@@ -81,13 +101,17 @@ a starting point to create something more unique.</p>
         <p><a class="btn btn-primary btn-large">Learn more &raquo;</a></p>
       </div>
 
+      <div class="tempmonitors">
+        <div id="tempmonitors"></div>
+      </div>
+
       <!-- Example row of columns -->
       <div class="row">
         <div class="span4">
           <h2>Heading</h2>
-	<div class="currenttemp" data-percent="50"><span>50</span></div>
-          <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. 
-Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
+          
+	        <!--  <div class="currenttemp" data-percent="0"><span></span></div>
+            <div class="currenttempother" data-percent="0"><span></span></div>-->
           <p><a class="btn" href="#">View details &raquo;</a></p>
         </div>
         <div class="span4">
@@ -122,27 +146,29 @@ commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus
 
 <script type="text/javascript">
 $(document).ready(function() {
-   cosm.setKey( "bI-PWNeyFPrHnJOq7tclJGLVjDiSAKxOSlRJNVVYMTBnbz0g" );
+  cosm.setKey( "bI-PWNeyFPrHnJOq7tclJGLVjDiSAKxOSlRJNVVYMTBnbz0g" );
 
-  /* $('.currenttemp').cosm('live', { feed: 97289, datastream: '1' }); */
+    /* $('.currenttemp').cosm('live', { feed: 97289, datastream: '1' }); */
 
-function colorbyValue(value)
-{
-  if(value >= 10)
+  function valueToRatio(value){
+    return 100*parseFloat(value)/($this.minmax[1]-$this.minmax[0]);
+  }
+
+  function colorbyValue(value){
+    if(value < valueToRatio($this.minmax[0]))
+      return "blue";
+    if(value < valueToRatio($this.minmax[1]))
+      return "green";
+
     return "red";
-  
-  return "blue";
-}
+  }
 
-function valueToRatio(value)
-{
-  return 100*parseFloat(value)/(45+10);
-}
-   $('.currenttemp').easyPieChart({
-        animate: 1000,
-        barColor: colorbyValue,
-        lineWidth: 5
-    });
+  /*
+  $('.currenttemp').easyPieChart({
+    animate: 1000,
+    barColor: colorbyValue,
+    lineWidth: 5
+  });
 
   cosm.datastream.get( "97289", "1", function( data ) {
     $('.currenttemp').data('easyPieChart').update(valueToRatio(data.current_value));
@@ -150,19 +176,105 @@ function valueToRatio(value)
     console.log( data.current_value ); // Logs value changes in realtime
   });
 
- cosm.datastream.subscribe( "97289", "1", function( event, data ) {
+  cosm.datastream.subscribe( "97289", "1", function( event, data ) {
     $('.currenttemp').data('easyPieChart').update(data.current_value);
     $('span', '.currenttemp').text(data.current_value);
     console.log( data.current_value ); // Logs value changes in realtime  
   }); 
+*/
+  var containers = "tempholder_";
+
+  var feedtable = [ { feed: "97289", datastream: "1", title: "Thermostat",    minmax: [10, 30],  greenzone: [15, 25]},
+                    { feed: "97289", datastream: "3", title: "Extérieur",     minmax: [-10, 40], greenzone: [10, 25]},
+                    { feed: "97289", datastream: "9", title: "Salon",         minmax: [10, 30],  greenzone: [15, 25]},
+                    { feed: "97289", datastream: "8", title: "Chambre",       minmax: [10, 30],  greenzone: [15, 25]},
+                    { feed: "97289", datastream: "6", title: "Chaudière IN",  minmax: [15, 85],  greenzone: [20, 55]},
+                    { feed: "97289", datastream: "5", title: "Chaudière OUT", minmax: [15, 85],  greenzone: [20, 55]}];
 
 
+  function cosmOneTime(selector, feed, datastream, valueToRatio){
+    cosm.datastream.get( feed, datastream, function( data ) {
+      selector.data('easyPieChart').update(valueToRatio(data.current_value));
+      $('span', selector).text(data.current_value+data.unit.label);
+      //console.log( data.current_value ); // Logs value changes in realtime
+    });
+  }
 
+  function Tempmonitor(feedelement){
+    this.minmax = feedelement.minmax;
+    this.greenzone = feedelement.greenzone;
+    this.element = feedelement.element;
+    this.feed = feedelement;
 
- });
+    this.valueToRatio = function(self, value){
+      return 100*(Math.abs(parseFloat(value)-self.minmax[0]))/(self.minmax[1]-self.minmax[0]);
+    };
 
+    this.colorbyValue = function(self, value){
+      if(value < this.valueToRatio(self, self.greenzone[0]))
+        return "blue";
+      if(value < this.valueToRatio(self, self.greenzone[1]))
+        return "green";
 
+      return "red";
+    };
 
+    this.cosmOneTime = function(){
+      console.log(this);
+      cosm.datastream.get( this.feed.feed, this.feed.datastream, ( function(self) {
+        return function( data ) {
+          console.log(self);
+          self.element.data('easyPieChart').update(self.valueToRatio(self, data.current_value));
+          $('span', self.element).text(data.current_value+data.unit.label);
+        //console.log( data.current_value ); // Logs value changes in realtime
+        };
+      })(this));
+    };
+
+    this.createPie = function (){
+      this.element.easyPieChart({
+        animate: 1000,
+        barColor: ( function(self) { return function(data) { return self.colorbyValue(self, data); } } )(this),
+        lineWidth: 5
+      });
+    };
+  }
+  for(var i = 0; i < feedtable.length; i++){
+    feedtable[i].container = containers+i;
+
+    $("#tempmonitors").append("<div class=\"tempmonitor\"><p>"+feedtable[i].title+"</p><div class=\""+feedtable[i].container+" tempgauge\" data-percent=\"0\"><span></span></div></div>");
+
+    feedtable[i].element =  $("."+feedtable[i].container);
+
+    feedtable[i].monitor = new Tempmonitor(feedtable[i]);
+    feedtable[i].monitor.createPie();
+    feedtable[i].monitor.cosmOneTime();
+    /*
+    feedtable[i].valueToRatio = function valueToRatio(value){
+        return 100*parseFloat(value)/(feedtable[i].minmax[1]-feedtable[i].minmax[0]);
+      };
+
+    feedtable[i].colorbyValue = function colorbyValue(value){
+        if(value < feedtable[i].valueToRatio(feedtable[i].minmax[0]))
+          return "blue";
+        if(value < feedtable[i].valueToRatio(feedtable[i].minmax[1]))
+          return "green";
+
+        return "red";
+      };
+
+    feedtable[i].element.easyPieChart({
+      animate: 1000,
+      barColor: feedtable[i].colorbyValue,
+      lineWidth: 5
+    });
+
+    feedtable[i].cosmer = cosmOneTime;
+    feedtable[i].cosmer(feedtable[i].element, feedtable[i].feed, feedtable[i].datastream, feedtable[i].valueToRatio);
+  */
+  }
+
+});
 
 </script>
 
