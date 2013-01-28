@@ -240,7 +240,6 @@ $(document).ready(function() {
           //console.log(self);
           self.element.data('easyPieChart').update(self.valueToRatio(self, data.current_value));
           $('span', self.element).text(data.current_value+data.unit.label);
-          var d1 = new Date(data.at);
           $('#at', self.feed.masterelement).text(moment(data.at).fromNow());
         //console.log( data.current_value ); // Logs value changes in realtime
         };
@@ -253,9 +252,7 @@ $(document).ready(function() {
         return function( event, data ) {
           self.element.data('easyPieChart').update(self.valueToRatio(self, data.current_value));
           $('span', self.element).text(data.current_value+data.unit.label);
-
-          var d1 = new Date(data.at);
-          $('#at', self.feed.masterelement).text(d1.toString("dd-m-yy"));
+          $('#at', self.feed.masterelement).text(moment(data.at).fromNow());
           console.log( data.current_value ); // Logs value changes in realtime
         };
       })(this));
