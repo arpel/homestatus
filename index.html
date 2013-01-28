@@ -104,6 +104,12 @@
         <div id="tempmonitors"></div>
       </div>
 
+<div class="tempmonitors">
+  <h1>Graphs</h1>
+  <div id="graph-intemps"></div>
+  <div id="graph-heattemps"></div>
+</div>
+
       <!-- Main hero unit for a primary marketing message or call to action -->
       <div class="hero-unit">
         <h1>Hello, world!</h1>
@@ -150,6 +156,10 @@ commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus
     <script src="js/bootstrap.min.js"></script>
     <script src="http://d23cj0cdvyoxg0.cloudfront.net/cosmjs-1.0.0.min.js"></script>  
     <script type="text/javascript" src="js/jquery.easy-pie-chart.js"></script>
+
+    <script type="text/javascript" src="js/raphael-min.js"></script>
+    <script type="text/javascript" src="js/morris.min.js"></script>
+
     <script type="text/javascript" src="js/moment.min.js"></script>
 
 <script type="text/javascript">
@@ -181,7 +191,7 @@ $(document).ready(function() {
         sameElse: 'L'
     },
     relativeTime : {
-        future : "in %s",
+        future : "dans %s",
         past : "il y a %s",
         s : "secondes",
         m : "une minute",
@@ -280,6 +290,71 @@ $(document).ready(function() {
     feedtable[i].monitor.cosmOneTime();
     feedtable[i].monitor.cosmRealTime();
   }
+
+/* cosm.datastream.history (feedID, datastreamID, options{}, callback(data)) */
+
+  /*cosm.datastream.history( feedtable[0].feed, feedtable[0].datastream, {duration: "1day"}, function(data) {*/
+  cosm.feed.history( feedtable[0].feed, {duration: "1day"}, function(data) {
+    console.log(data); // Logs value changes in realtime
+    
+    graphdata = [];
+    j = 0;
+
+    streams = [ { stream: data.datastreams[0], marker: 't'}, 
+                { stream: data.datastreams[4], marker: 'c'},
+                { stream: data.datastreams[5], marker: 's'}];
+
+    for(var s in streams) {
+      stream = streams[s].stream;
+      marker = streams[s].marker;
+      
+
+      for(var i = 0; i < stream.datapoints.length; i++)
+      {
+        graphdata[j] = {y: stream.datapoints[i].at };
+        graphdata[j][marker] = stream.datapoints[i].value;
+        j++;
+      }
+    }
+
+    Morris.Line({
+      element: 'graph-intemps',
+      data: graphdata,
+      xkey: 'y',
+      ykeys: ['t', 'c', 's'],
+      labels: ['Thermostat', 'Chambre','Salon'],
+      ymin : 'auto'
+    });
+
+    graphdata = [];
+    j = 0;
+
+    streams = [ { stream: data.datastreams[2], marker: 'i'}, 
+                { stream: data.datastreams[3], marker: 'o'}];
+
+    for(var s in streams) {
+      stream = streams[s].stream;
+      marker = streams[s].marker;
+      
+
+      for(var i = 0; i < stream.datapoints.length; i++)
+      {
+        graphdata[j] = {y: stream.datapoints[i].at };
+        graphdata[j][marker] = stream.datapoints[i].value;
+        j++;
+      }
+    }
+
+    Morris.Line({
+      element: 'graph-heattemps',
+      data: graphdata,
+      xkey: 'y',
+      ykeys: ['i', 'o'],
+      labels: ['In', 'Out'],
+      ymin : 'auto'
+    });
+
+  });
 
 });
 
