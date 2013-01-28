@@ -23,6 +23,7 @@
         font-weight: 200;
         line-height: 30px;
         color: inherit;
+        border-width: 2px;
         border-color: #EEEEEE;
         -webkit-border-radius: 6px;
            -moz-border-radius: 6px;
@@ -34,6 +35,11 @@
         text-align: center;
         display: inline-block;
       }
+
+      .tempmonitor #at {
+        font-size: 10px;
+      }
+
 
     </style>
     <link href="css/bootstrap-responsive.css" rel="stylesheet">
@@ -93,16 +99,17 @@
 
     <div class="container">
 
+      <div class="tempmonitors">
+        <h1>Monitors</h1>
+        <div id="tempmonitors"></div>
+      </div>
+
       <!-- Main hero unit for a primary marketing message or call to action -->
       <div class="hero-unit">
         <h1>Hello, world!</h1>
         <p>This is a template for a simple marketing or informational website. It includes a large callout called the hero unit and three supporting pieces of content. Use it as 
 a starting point to create something more unique.</p>
         <p><a class="btn btn-primary btn-large">Learn more &raquo;</a></p>
-      </div>
-
-      <div class="tempmonitors">
-        <div id="tempmonitors"></div>
       </div>
 
       <!-- Example row of columns -->
@@ -131,7 +138,7 @@ commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus
       <hr>
 
       <footer>
-        <p>&copy; Company 2012</p>
+        <p>&copy; TM 2013</p>
       </footer>
 
     </div> <!-- /container -->
@@ -143,45 +150,60 @@ commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus
     <script src="js/bootstrap.min.js"></script>
     <script src="http://d23cj0cdvyoxg0.cloudfront.net/cosmjs-1.0.0.min.js"></script>  
     <script type="text/javascript" src="js/jquery.easy-pie-chart.js"></script>
+    <script type="text/javascript" src="js/moment.min.js"></script>
 
 <script type="text/javascript">
 $(document).ready(function() {
+
+  moment.lang('fr', {
+    months : "Janvier_Février_Mars_Avril_Mai_Juin_Juillet_Aout_Septembre_Octobre_Novembre_Décembre".split("_"),
+    monthsShort : "Jan_Fev_Mar_Avr_Mai_Juin_Juil_Aou_Sep_Oct_Nov_Dec".split("_"),
+    weekdays : "Dimanche_Lundi_Mardi_Mercredi_Jeudi_Vendredi_Samedi".split("_"),
+    weekdaysShort : "Dim_Lun_Mar_Mer_Jeu_Ven_Sam".split("_"),
+    longDateFormat : {
+        L : "DD/MM/YYYY",
+        LL : "D MMMM YYYY",
+        LLL : "D MMMM YYYY HH:mm",
+        LLLL : "dddd, D MMMM YYYY HH:mm"
+    },
+    meridiem : {
+        AM : 'AM',
+        am : 'am',
+        PM : 'PM',
+        pm : 'pm'
+    },
+    calendar : {
+        sameDay: "[Ajourd'hui à] LT",
+        nextDay: '[Demain à] LT',
+        nextWeek: 'dddd [à] LT',
+        lastDay: '[Hier à] LT',
+        lastWeek: 'dddd [denier à] LT',
+        sameElse: 'L'
+    },
+    relativeTime : {
+        future : "in %s",
+        past : "il y a %s",
+        s : "secondes",
+        m : "une minute",
+        mm : "%d minutes",
+        h : "une heure",
+        hh : "%d heures",
+        d : "un jour",
+        dd : "%d jours",
+        M : "un mois",
+        MM : "%d mois",
+        y : "une année",
+        yy : "%d années"
+    },
+    ordinal : function (number) {
+        return (~~ (number % 100 / 10) === 1) ? 'er' : 'ème';
+    }
+});
+
+  moment.lang('fr');
+
   cosm.setKey( "bI-PWNeyFPrHnJOq7tclJGLVjDiSAKxOSlRJNVVYMTBnbz0g" );
 
-    /* $('.currenttemp').cosm('live', { feed: 97289, datastream: '1' }); */
-
-  function valueToRatio(value){
-    return 100*parseFloat(value)/($this.minmax[1]-$this.minmax[0]);
-  }
-
-  function colorbyValue(value){
-    if(value < valueToRatio($this.minmax[0]))
-      return "blue";
-    if(value < valueToRatio($this.minmax[1]))
-      return "green";
-
-    return "red";
-  }
-
-  /*
-  $('.currenttemp').easyPieChart({
-    animate: 1000,
-    barColor: colorbyValue,
-    lineWidth: 5
-  });
-
-  cosm.datastream.get( "97289", "1", function( data ) {
-    $('.currenttemp').data('easyPieChart').update(valueToRatio(data.current_value));
-    $('span', '.currenttemp').text(data.current_value);
-    console.log( data.current_value ); // Logs value changes in realtime
-  });
-
-  cosm.datastream.subscribe( "97289", "1", function( event, data ) {
-    $('.currenttemp').data('easyPieChart').update(data.current_value);
-    $('span', '.currenttemp').text(data.current_value);
-    console.log( data.current_value ); // Logs value changes in realtime  
-  }); 
-*/
   var containers = "tempholder_";
 
   var feedtable = [ { feed: "97289", datastream: "1", title: "Thermostat",    minmax: [10, 30],  greenzone: [15, 25]},
@@ -191,14 +213,6 @@ $(document).ready(function() {
                     { feed: "97289", datastream: "6", title: "Chaudière IN",  minmax: [15, 85],  greenzone: [20, 55]},
                     { feed: "97289", datastream: "5", title: "Chaudière OUT", minmax: [15, 85],  greenzone: [20, 55]}];
 
-
-  function cosmOneTime(selector, feed, datastream, valueToRatio){
-    cosm.datastream.get( feed, datastream, function( data ) {
-      selector.data('easyPieChart').update(valueToRatio(data.current_value));
-      $('span', selector).text(data.current_value+data.unit.label);
-      //console.log( data.current_value ); // Logs value changes in realtime
-    });
-  }
 
   function Tempmonitor(feedelement){
     this.minmax = feedelement.minmax;
@@ -220,13 +234,29 @@ $(document).ready(function() {
     };
 
     this.cosmOneTime = function(){
-      console.log(this);
+      //console.log(this);
       cosm.datastream.get( this.feed.feed, this.feed.datastream, ( function(self) {
         return function( data ) {
-          console.log(self);
+          //console.log(self);
           self.element.data('easyPieChart').update(self.valueToRatio(self, data.current_value));
           $('span', self.element).text(data.current_value+data.unit.label);
+          var d1 = new Date(data.at);
+          $('#at', self.feed.masterelement).text(moment(data.at).fromNow());
         //console.log( data.current_value ); // Logs value changes in realtime
+        };
+      })(this));
+    };
+
+    this.cosmRealTime = function(){
+      console.log(this);
+      cosm.datastream.subscribe( this.feed.feed, this.feed.datastream, ( function(self) {
+        return function( event, data ) {
+          self.element.data('easyPieChart').update(self.valueToRatio(self, data.current_value));
+          $('span', self.element).text(data.current_value+data.unit.label);
+
+          var d1 = new Date(data.at);
+          $('#at', self.feed.masterelement).text(d1.toString("dd-m-yy"));
+          console.log( data.current_value ); // Logs value changes in realtime
         };
       })(this));
     };
@@ -239,39 +269,19 @@ $(document).ready(function() {
       });
     };
   }
+
   for(var i = 0; i < feedtable.length; i++){
     feedtable[i].container = containers+i;
 
-    $("#tempmonitors").append("<div class=\"tempmonitor\"><p>"+feedtable[i].title+"</p><div class=\""+feedtable[i].container+" tempgauge\" data-percent=\"0\"><span></span></div></div>");
+    $("#tempmonitors").append("<div class=\"tempmonitor "+feedtable[i].container+"\"><p>"+feedtable[i].title+"</p><div class=\"tempgauge\" data-percent=\"0\"><span></span></div><p id=\"at\">TEST</p></div>");
 
-    feedtable[i].element =  $("."+feedtable[i].container);
+    feedtable[i].masterelement =  $("."+feedtable[i].container);
+    feedtable[i].element =  $(".tempgauge", feedtable[i].masterelement);
 
     feedtable[i].monitor = new Tempmonitor(feedtable[i]);
     feedtable[i].monitor.createPie();
     feedtable[i].monitor.cosmOneTime();
-    /*
-    feedtable[i].valueToRatio = function valueToRatio(value){
-        return 100*parseFloat(value)/(feedtable[i].minmax[1]-feedtable[i].minmax[0]);
-      };
-
-    feedtable[i].colorbyValue = function colorbyValue(value){
-        if(value < feedtable[i].valueToRatio(feedtable[i].minmax[0]))
-          return "blue";
-        if(value < feedtable[i].valueToRatio(feedtable[i].minmax[1]))
-          return "green";
-
-        return "red";
-      };
-
-    feedtable[i].element.easyPieChart({
-      animate: 1000,
-      barColor: feedtable[i].colorbyValue,
-      lineWidth: 5
-    });
-
-    feedtable[i].cosmer = cosmOneTime;
-    feedtable[i].cosmer(feedtable[i].element, feedtable[i].feed, feedtable[i].datastream, feedtable[i].valueToRatio);
-  */
+    feedtable[i].monitor.cosmRealTime();
   }
 
 });
