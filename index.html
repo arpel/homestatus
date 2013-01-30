@@ -104,10 +104,8 @@
         <div id="tempmonitors"></div>
       </div>
 
-<div class="tempmonitors">
+<div class="tempmonitors" id="detailedgraphs">
   <h1>Graphs</h1>
-  <div id="graph-intemps"></div>
-  <div id="graph-heattemps"></div>
 </div>
 
       <!-- Main hero unit for a primary marketing message or call to action -->
@@ -291,10 +289,120 @@ $(document).ready(function() {
     feedtable[i].monitor.cosmRealTime();
   }
 
-/* cosm.datastream.history (feedID, datastreamID, options{}, callback(data)) */
+  function Graph(target, streamsparams, feed, history_params)
+  {
+    var self = this;
 
+    self.graphdata = [];
+    self.j = 0;
+    
+    self.streams = streamsparams;
+    self.feed = feed;
+    self.history_params = history_params;
+    
+    self.markers = [];
+    self.labels = [];
+
+    self.target = target;
+    $("#detailedgraphs").append("<div id=\""+target+"\"></div>");
+  }
+
+  Graph.prototype.getData = function()
+  {
+    deferred_calls = [];
+    for (s in this.streams)
+    {
+      stream = this.streams[s].stream;
+      marker = this.streams[s].marker;
+      label = this.streams[s].label;
+
+      var dfd = $.Deferred();
+
+      cosm.datastream.history(this.feed, stream, this.history_params, ( function(self, marker, label, dfd) {
+        return function( data ) {
+          console.log(data); // Logs value changes in realtime
+      
+          for(var i = 0; i < data.datapoints.length; i++)
+          {
+            self.graphdata[self.j] = {y: data.datapoints[i].at };
+            self.graphdata[self.j][marker] = data.datapoints[i].value;
+            self.j++;
+          }
+
+          self.markers.push(marker); 
+          self.labels.push(label);
+
+          dfd.resolve();
+        }
+      })(this, marker, label, dfd));
+
+      deferred_calls[s] = dfd.promise();
+    }
+    return deferred_calls;
+  }
+
+  Graph.prototype.getAllData = function()
+  {
+    $.when.apply(this, this.getData()).done( ( function(self) {
+      return function () {
+        console.log(self.graphdata);
+        Morris.Line({
+          element: self.target,
+          data: self.graphdata,
+          xkey: 'y',
+          ykeys: self.markers,
+          labels: self.labels,
+          ymin : 'auto'
+        });
+      }
+    })(this));
+  }
+
+
+
+  Graph.prototype.genGraph = function(feed, history_params)
+  {
+    cosm.datastream.history(feed, this.stream, history_params, ( function(self) {
+      return function( data ) {
+        console.log(data); // Logs value changes in realtime
+    
+        for(var i = 0; i < data.datapoints.length; i++)
+        {
+          self.graphdata[self.j] = {y: data.datapoints[i].at };
+          self.graphdata[self.j][self.marker] = data.datapoints[i].value;
+          self.j++;
+        }
+
+        Morris.Line({
+          element: self.target,
+          data: self.graphdata,
+          xkey: 'y',
+          ykeys: [self.marker],
+          labels: [self.label],
+          ymin : 'auto'
+        });
+      }
+
+    })(this));
+  }
+
+  streams = [ { stream: 1, marker: 't', label: 'Thermostat'}, 
+              { stream: 8, marker: 'c', label: 'Chambre'},
+              { stream: 9, marker: 's', label: 'Salon'}];
+
+  var gen1 = new Graph('graph_intemp1', streams, feedtable[0].feed, {start: moment().subtract('hours', 24).format(), interval: 600, limit: 300});
+  gen1.getAllData();
+
+  streams = [ { stream: 5, marker: 'o', label: 'Out'}, 
+              { stream: 6, marker: 'i', label: 'In'}];
+
+  var gen2 = new Graph('graph_intemp2', streams, feedtable[0].feed, {start: moment().subtract('hours', 24).format(), interval: 600, limit: 300});
+  gen2.getAllData();
+
+
+/* cosm.datastream.history (feedID, datastreamID, options{}, callback(data)) */
   /*cosm.datastream.history( feedtable[0].feed, feedtable[0].datastream, {duration: "1day"}, function(data) {*/
-  cosm.feed.history( feedtable[0].feed, {duration: "1day"}, function(data) {
+/*  cosm.feed.history( feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 300, limit: 1000}, function(data) {
     console.log(data); // Logs value changes in realtime
     
     graphdata = [];
@@ -329,8 +437,8 @@ $(document).ready(function() {
     graphdata = [];
     j = 0;
 
-    streams = [ { stream: data.datastreams[2], marker: 'i'}, 
-                { stream: data.datastreams[3], marker: 'o'}];
+    streams = [ { stream: data.datastreams[2], marker: 'o'}, 
+                { stream: data.datastreams[3], marker: 'i'}];
 
     for(var s in streams) {
       stream = streams[s].stream;
@@ -349,12 +457,13 @@ $(document).ready(function() {
       element: 'graph-heattemps',
       data: graphdata,
       xkey: 'y',
-      ykeys: ['i', 'o'],
-      labels: ['In', 'Out'],
+      ykeys: ['o', 'i'],
+      labels: ['Out', 'In'],
       ymin : 'auto'
     });
 
   });
+*/
 
 });
 
