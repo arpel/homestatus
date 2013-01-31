@@ -294,7 +294,6 @@ $(document).ready(function() {
     var self = this;
 
     self.graphdata = [];
-    self.j = 0;
     
     self.streams = streamsparams;
     self.feed = feed;
@@ -320,13 +319,17 @@ $(document).ready(function() {
 
       cosm.datastream.history(this.feed, stream, this.history_params, ( function(self, marker, label, dfd) {
         return function( data ) {
-          console.log(data); // Logs value changes in realtime
+          //console.log(data); // Logs value changes in realtime
       
           for(var i = 0; i < data.datapoints.length; i++)
           {
-            self.graphdata[self.j] = {y: data.datapoints[i].at };
-            self.graphdata[self.j][marker] = data.datapoints[i].value;
-            self.j++;
+            if ( self.graphdata[data.datapoints[i].at] === undefined )
+            {
+              self.graphdata[data.datapoints[i].at] = {y: data.datapoints[i].at};
+              self.graphdata[data.datapoints[i].at][marker] = data.datapoints[i].value;
+            } else {
+              self.graphdata[data.datapoints[i].at][marker] = data.datapoints[i].value;
+            }
           }
 
           self.markers.push(marker); 
@@ -345,10 +348,15 @@ $(document).ready(function() {
   {
     $.when.apply(this, this.getData()).done( ( function(self) {
       return function () {
-        console.log(self.graphdata);
+        //console.log(self.graphdata);
+        data = [];
+        for ( k in self.graphdata ){
+          data.push(self.graphdata[k]);
+        }
+        //console.log(data);
         Morris.Line({
           element: self.target,
-          data: self.graphdata,
+          data: data,
           xkey: 'y',
           ykeys: self.markers,
           labels: self.labels,
@@ -359,111 +367,29 @@ $(document).ready(function() {
   }
 
 
-
-  Graph.prototype.genGraph = function(feed, history_params)
-  {
-    cosm.datastream.history(feed, this.stream, history_params, ( function(self) {
-      return function( data ) {
-        console.log(data); // Logs value changes in realtime
-    
-        for(var i = 0; i < data.datapoints.length; i++)
-        {
-          self.graphdata[self.j] = {y: data.datapoints[i].at };
-          self.graphdata[self.j][self.marker] = data.datapoints[i].value;
-          self.j++;
-        }
-
-        Morris.Line({
-          element: self.target,
-          data: self.graphdata,
-          xkey: 'y',
-          ykeys: [self.marker],
-          labels: [self.label],
-          ymin : 'auto'
-        });
-      }
-
-    })(this));
-  }
-
   streams = [ { stream: 1, marker: 't', label: 'Thermostat'}, 
               { stream: 8, marker: 'c', label: 'Chambre'},
               { stream: 9, marker: 's', label: 'Salon'}];
 
-  var gen1 = new Graph('graph_intemp1', streams, feedtable[0].feed, {start: moment().subtract('hours', 24).format(), interval: 600, limit: 300});
+  var gen1 = new Graph('graph_intemp1', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 600, limit: 300, interval_type: 'discrete'});
   gen1.getAllData();
 
   streams = [ { stream: 5, marker: 'o', label: 'Out'}, 
               { stream: 6, marker: 'i', label: 'In'}];
 
-  var gen2 = new Graph('graph_intemp2', streams, feedtable[0].feed, {start: moment().subtract('hours', 24).format(), interval: 600, limit: 300});
+  var gen2 = new Graph('graph_intemp2', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 600, limit: 300, interval_type: 'discrete'});
   gen2.getAllData();
 
 
-/* cosm.datastream.history (feedID, datastreamID, options{}, callback(data)) */
-  /*cosm.datastream.history( feedtable[0].feed, feedtable[0].datastream, {duration: "1day"}, function(data) {*/
-/*  cosm.feed.history( feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 300, limit: 1000}, function(data) {
-    console.log(data); // Logs value changes in realtime
-    
-    graphdata = [];
-    j = 0;
+  streams = [ { stream: 1, marker: 't', label: 'Thermostat'},
+              { stream: 3, marker: 'e', label: 'Exterieur'}];
 
-    streams = [ { stream: data.datastreams[0], marker: 't'}, 
-                { stream: data.datastreams[4], marker: 'c'},
-                { stream: data.datastreams[5], marker: 's'}];
+  var gen3 = new Graph('graph_intemp3', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 600, limit: 300, interval_type: 'discrete'});
+  gen3.getAllData();
 
-    for(var s in streams) {
-      stream = streams[s].stream;
-      marker = streams[s].marker;
-      
+  var gen4 = new Graph('graph_intemp4', streams, feedtable[0].feed, {start: moment().subtract('hours', 48).format(), interval: 2400, limit: 300, interval_type: 'discrete'});
+  gen4.getAllData();
 
-      for(var i = 0; i < stream.datapoints.length; i++)
-      {
-        graphdata[j] = {y: stream.datapoints[i].at };
-        graphdata[j][marker] = stream.datapoints[i].value;
-        j++;
-      }
-    }
-
-    Morris.Line({
-      element: 'graph-intemps',
-      data: graphdata,
-      xkey: 'y',
-      ykeys: ['t', 'c', 's'],
-      labels: ['Thermostat', 'Chambre','Salon'],
-      ymin : 'auto'
-    });
-
-    graphdata = [];
-    j = 0;
-
-    streams = [ { stream: data.datastreams[2], marker: 'o'}, 
-                { stream: data.datastreams[3], marker: 'i'}];
-
-    for(var s in streams) {
-      stream = streams[s].stream;
-      marker = streams[s].marker;
-      
-
-      for(var i = 0; i < stream.datapoints.length; i++)
-      {
-        graphdata[j] = {y: stream.datapoints[i].at };
-        graphdata[j][marker] = stream.datapoints[i].value;
-        j++;
-      }
-    }
-
-    Morris.Line({
-      element: 'graph-heattemps',
-      data: graphdata,
-      xkey: 'y',
-      ykeys: ['o', 'i'],
-      labels: ['Out', 'In'],
-      ymin : 'auto'
-    });
-
-  });
-*/
 
 });
 
