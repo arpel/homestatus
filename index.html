@@ -17,14 +17,15 @@
       }
 
       .tempmonitors {
-        padding: 60px;
-        margin-bottom: 30px;
+        padding: 30px;
+        margin-bottom: 10px;
         font-size: 18px;
         font-weight: 200;
         line-height: 30px;
         color: inherit;
-        border-width: 2px;
+        border-width: 1px;
         border-color: #EEEEEE;
+        border-style: solid;
         -webkit-border-radius: 6px;
            -moz-border-radius: 6px;
                 border-radius: 6px;
@@ -33,6 +34,7 @@
       .tempmonitor {
         font-size: 14px;
         text-align: center;
+        padding: 6px;
         display: inline-block;
       }
 
@@ -289,7 +291,7 @@ $(document).ready(function() {
     feedtable[i].monitor.cosmRealTime();
   }
 
-  function Graph(target, streamsparams, feed, history_params)
+  function Graph(title, target, streamsparams, feed, history_params)
   {
     var self = this;
 
@@ -303,7 +305,7 @@ $(document).ready(function() {
     self.labels = [];
 
     self.target = target;
-    $("#detailedgraphs").append("<div id=\""+target+"\"></div>");
+    $("#detailedgraphs").append("<div><h3>"+title+"</h3><div id=\""+target+"\"></div></div>");
   }
 
   Graph.prototype.getData = function()
@@ -371,24 +373,21 @@ $(document).ready(function() {
               { stream: 8, marker: 'c', label: 'Chambre'},
               { stream: 9, marker: 's', label: 'Salon'}];
 
-  var gen1 = new Graph('graph_intemp1', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 600, limit: 300, interval_type: 'discrete'});
+  var gen1 = new Graph("Températures intérieures - 6h", 'graph_intemp1', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 300, limit: 300, interval_type: 'discrete'});
   gen1.getAllData();
 
   streams = [ { stream: 5, marker: 'o', label: 'Out'}, 
               { stream: 6, marker: 'i', label: 'In'}];
 
-  var gen2 = new Graph('graph_intemp2', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 600, limit: 300, interval_type: 'discrete'});
+  var gen2 = new Graph("Températures chaudière - 6h",'graph_intemp2', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 300, limit: 300, interval_type: 'discrete'});
   gen2.getAllData();
 
 
   streams = [ { stream: 1, marker: 't', label: 'Thermostat'},
               { stream: 3, marker: 'e', label: 'Exterieur'}];
 
-  var gen3 = new Graph('graph_intemp3', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 600, limit: 300, interval_type: 'discrete'});
+  var gen3 = new Graph("Températures intérieur / extérieur - 48h",'graph_intemp3', streams, feedtable[0].feed, {start: moment().subtract('hours', 48).format(), interval: 2400, limit: 300, interval_type: 'discrete'});
   gen3.getAllData();
-
-  var gen4 = new Graph('graph_intemp4', streams, feedtable[0].feed, {start: moment().subtract('hours', 48).format(), interval: 2400, limit: 300, interval_type: 'discrete'});
-  gen4.getAllData();
 
 
 });
