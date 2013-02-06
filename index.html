@@ -276,6 +276,8 @@ $(document).ready(function() {
 
     self.target = target;
     $("#detailedgraphs").append("<div><h3>"+title+"</h3><div id=\""+target+"\"></div></div><hr>");
+
+    self.toggle = false;
   }
 
   Graph.prototype.getData = function()
@@ -287,29 +289,46 @@ $(document).ready(function() {
       marker = this.streams[s].marker;
       label = this.streams[s].label;
 
+      if(this.streams[s].toggle == undefined)
+      {
+        toggle = false;
+      } else 
+      {
+        toggle = this.streams[s].toggle;
+        this.toggle = true;
+      }
+
       var dfd = $.Deferred();
 
-      cosm.datastream.history(this.feed, stream, this.history_params, ( function(self, marker, label, dfd) {
+      cosm.datastream.history(this.feed, stream, this.history_params, ( function(self, marker, label, dfd, toggle) {
         return function( data ) {
           //console.log(data); // Logs value changes in realtime
-      
+          previous = 50;
+          nbH = 0;
+          nbL = 0;
           for(var i = 0; i < data.datapoints.length; i++)
           {
             if ( self.graphdata[data.datapoints[i].at] === undefined )
             {
-              self.graphdata[data.datapoints[i].at] = {y: data.datapoints[i].at};
-              self.graphdata[data.datapoints[i].at][marker] = data.datapoints[i].value;
-            } else {
-              self.graphdata[data.datapoints[i].at][marker] = data.datapoints[i].value;
+              self.graphdata[data.datapoints[i].at] = {y: data.datapoints[i].at}; 
+            }
+            /* Insert Value */
+            self.graphdata[data.datapoints[i].at][marker] = data.datapoints[i].value;
+            if(toggle)
+            {
+              if(data.datapoints[i].value > previous) { self.graphdata[data.datapoints[i].at]["tt"] = 10; nbH++; }
+              else { self.graphdata[data.datapoints[i].at]["tt"] = 0; nbL++; }
+              previous = data.datapoints[i].value;
             }
           }
+          console.log("Low : %d | High : %d", nbL, nbH);
 
           self.markers.push(marker); 
           self.labels.push(label);
 
           dfd.resolve();
         }
-      })(this, marker, label, dfd));
+      })(this, marker, label, dfd, toggle));
 
       deferred_calls[s] = dfd.promise();
     }
@@ -326,12 +345,20 @@ $(document).ready(function() {
           data.push(self.graphdata[k]);
         }
         //console.log(data);
+        markers = self.markers;
+        labels = self.labels;
+
+        if(self.toggle) {
+          markers.push("tt");
+          labels.push("Toggle");
+        }
+
         Morris.Line({
           element: self.target,
           data: data,
           xkey: 'y',
-          ykeys: self.markers,
-          labels: self.labels,
+          ykeys: markers,
+          labels: labels,
           ymin : 'auto'
         });
       }
@@ -359,6 +386,11 @@ $(document).ready(function() {
   var gen3 = new Graph("Températures intérieur / extérieur - 48h",'graph_intemp3', streams, feedtable[0].feed, {start: moment().subtract('hours', 48).format(), interval: 2400, limit: 300, interval_type: 'discrete'});
   gen3.getAllData();
 
+  streams = [ { stream: 5, marker: 'o', label: 'Out', toggle: true}, 
+              { stream: 6, marker: 'i', label: 'In'}];
+
+  var gen2 = new Graph("Températures chaudière - 24h",'graph_intemp4', streams, feedtable[0].feed, {start: moment().subtract('hours', 24).format(), interval: 300, limit: 1000, interval_type: 'discrete'});
+  gen2.getAllData();
 
 });
 
