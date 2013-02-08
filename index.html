@@ -389,8 +389,15 @@ $(document).ready(function() {
   streams = [ { stream: 5, marker: 'o', label: 'Out', toggle: true}, 
               { stream: 6, marker: 'i', label: 'In'}];
 
-  var gen2 = new Graph("Températures chaudière - 24h",'graph_intemp4', streams, feedtable[0].feed, {start: moment().subtract('hours', 24).format(), interval: 300, limit: 1000, interval_type: 'discrete'});
-  gen2.getAllData();
+  var gen4 = new Graph("Températures chaudière - 24h",'graph_intemp4', streams, feedtable[0].feed, {start: moment().subtract('hours', 24).format(), interval: 300, limit: 1000, interval_type: 'discrete'});
+  gen4.getAllData();
+
+
+  streams = [ { stream: 5, marker: 'o', label: 'Out', toggle: true}, 
+              { stream: 6, marker: 'i', label: 'In'}];
+
+  var gen5 = new Graph("Températures chaudière - 6h",'graph_intemp5', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 30, limit: 1000});
+  gen5.getAllData();
 
 });
 
