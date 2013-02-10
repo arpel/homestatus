@@ -43,7 +43,29 @@
       }
 
 
+
+
+svg {
+  display: block;
+}
+
+#chart svg {
+  height: 500px;
+  min-width: 800px;
+  min-height: 100px;
+/*
+  margin: 50px;
+  Minimum height and width is a good idea to prevent negative SVG dimensions...
+  For example width should be =< margin.left + margin.right + 1,
+  of course 1 pixel for the entire chart would not be very useful, BUT should not have errors
+*/
+}
+
+
     </style>
+
+    <link href="css/nv.d3.css" rel="stylesheet" type="text/css">
+
     <link href="css/bootstrap-responsive.css" rel="stylesheet">
 
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
@@ -110,8 +132,10 @@
         <h1>Graphs</h1>
       </div>
 
-
       <hr>
+
+<div id="othergraphs">
+</div>
 
       <footer>
         <p>&copy; TM 2013</p>
@@ -121,6 +145,11 @@
 
     <!-- Le javascript
     ================================================== -->
+    <script src="js/d3.v3.min.js"></script>
+    <script src="js/nv.d3.min.js"></script>
+<script src="js/novus-nvd3-7058d53/src/models/lineWithFocusChart.js"></script>
+<script src="js/novus-nvd3-7058d53/examples/stream_layers.js"></script>
+
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="http://code.jquery.com/jquery-latest.js"></script>
     <script src="js/bootstrap.min.js"></script>
@@ -366,6 +395,80 @@ $(document).ready(function() {
   }
 
 
+  Graph.prototype.getAllDataGenSlidingGraph = function()
+  {
+    $.when.apply(this, this.getData()).done( ( function(self) {
+      return function () {
+        //console.log(self.graphdata);
+        data = [];
+        for ( k in self.graphdata ){
+          data.push(self.graphdata[k]);
+        }
+        //console.log(data);
+        markers = self.markers;
+        labels = self.labels;
+
+        if(self.toggle) {
+          markers.push("tt");
+          labels.push("Toggle");
+        }
+
+        datastyleD3 = [];
+        for(m in self.markers){
+          datastyleD3[m] = [];
+        }
+
+        for ( k in self.graphdata ){
+          x = self.graphdata[k]["y"];
+          for(m in self.markers){
+            if(self.graphdata[k][self.markers[m]] != undefined)
+            {
+              y = self.graphdata[k][self.markers[m]];
+              datastyleD3[m].push({x: moment(x).valueOf(), y: parseFloat(y)});
+            }
+          }
+        }
+
+        dataforD3 = [];
+        for(l in self.labels){
+          dataforD3.push({ key: self.labels[l], values: datastyleD3[l]})
+        }
+
+        //console.log(dataforD3);
+
+        $("#"+self.target).append("<svg style=\"height: 500px;\"></svg>");
+
+        nv.addGraph(function() {
+          var chart = nv.models.lineWithFocusChart();
+
+          chart.xAxis.tickFormat(function(d) {
+            return d3.time.format('%H:%M:%S')(new Date(d))
+          }); 
+
+          chart.x2Axis.tickFormat(function(d) {
+            return d3.time.format('%H:%M:%S')(new Date(d))
+          }); 
+
+          chart.yAxis
+              .tickFormat(d3.format(',.2f'));
+          chart.y2Axis
+              .tickFormat(d3.format(',.2f'));
+
+          d3.select('#'+self.target+' svg')
+              .datum(dataforD3)
+            .transition().duration(100)
+              .call(chart);
+
+          nv.utils.windowResize(chart.update);
+
+          return chart;
+        });
+      }
+    })(this));
+
+  }
+
+
   streams = [ { stream: 1, marker: 't', label: 'Thermostat'}, 
               { stream: 8, marker: 'c', label: 'Chambre'},
               { stream: 9, marker: 's', label: 'Salon'}];
@@ -396,8 +499,12 @@ $(document).ready(function() {
   streams = [ { stream: 5, marker: 'o', label: 'Out', toggle: true}, 
               { stream: 6, marker: 'i', label: 'In'}];
 
-  var gen5 = new Graph("Températures chaudière - 6h",'graph_intemp5', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 30, limit: 1000});
+/*  var gen5 = new Graph("Températures chaudière - 6h",'graph_intemp5', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 30, limit: 1000});
   gen5.getAllData();
+*/
+
+var slide1 = new Graph("Températures chaudière - 6h", 'chart', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 30, limit: 1000});
+slide1.getAllDataGenSlidingGraph();
 
 });
 
