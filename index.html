@@ -503,7 +503,7 @@ $(document).ready(function() {
   gen5.getAllData();
 */
 
-var slide1 = new Graph("Températures chaudière - 6h", 'chart', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 30, limit: 1000});
+var slide1 = new Graph("Températures chaudière - 12h", 'chart', streams, feedtable[0].feed, {start: moment().subtract('hours', 11.9).format(), interval: 30, limit: 1000});
 slide1.getAllDataGenSlidingGraph();
 
 });
