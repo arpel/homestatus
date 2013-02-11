@@ -49,7 +49,7 @@ svg {
   display: block;
 }
 
-#chart svg {
+.chart svg {
   height: 500px;
   min-width: 800px;
   min-height: 100px;
@@ -59,6 +59,11 @@ svg {
   For example width should be =< margin.left + margin.right + 1,
   of course 1 pixel for the entire chart would not be very useful, BUT should not have errors
 */
+}
+.stats {
+  font-size: 14px;
+        padding: 6px;
+        display: inline-block;
 }
 
 
@@ -307,6 +312,8 @@ $(document).ready(function() {
     $("#detailedgraphs").append("<div><h3>"+title+"</h3><div id=\""+target+"\"></div></div><hr>");
 
     self.toggle = false;
+    self.nbH = 0;
+    self.nbL = 0;
   }
 
   Graph.prototype.getData = function()
@@ -333,6 +340,7 @@ $(document).ready(function() {
         return function( data ) {
           //console.log(data); // Logs value changes in realtime
           previous = 50;
+          current = 0;
           nbH = 0;
           nbL = 0;
           for(var i = 0; i < data.datapoints.length; i++)
@@ -345,12 +353,15 @@ $(document).ready(function() {
             self.graphdata[data.datapoints[i].at][marker] = data.datapoints[i].value;
             if(toggle)
             {
-              if(data.datapoints[i].value > previous) { self.graphdata[data.datapoints[i].at]["tt"] = 10; nbH++; }
+              current = parseFloat(data.datapoints[i].value);
+              if(current > (previous + 0.1)) { self.graphdata[data.datapoints[i].at]["tt"] = 10; nbH++; }
               else { self.graphdata[data.datapoints[i].at]["tt"] = 0; nbL++; }
-              previous = data.datapoints[i].value;
+              previous = current;
             }
           }
           console.log("Low : %d | High : %d", nbL, nbH);
+          self.nbH += nbH;
+          self.nbL += nbL;
 
           self.markers.push(marker); 
           self.labels.push(label);
@@ -463,6 +474,9 @@ $(document).ready(function() {
 
           return chart;
         });
+
+        /* Some stats */
+        $("#"+self.target).append("<p class=\"stats\"> On : "+self.nbH+" | Off : "+self.nbL+" | % On : "+(self.nbH*100/(self.nbH+self.nbL))+"</p>");
       }
     })(this));
 
