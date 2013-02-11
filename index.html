@@ -334,43 +334,49 @@ $(document).ready(function() {
         this.toggle = true;
       }
 
-      var dfd = $.Deferred();
+      for(history_seq in this.history_params){
+        history_params = this.history_params[history_seq];
 
-      cosm.datastream.history(this.feed, stream, this.history_params, ( function(self, marker, label, dfd, toggle) {
-        return function( data ) {
-          //console.log(data); // Logs value changes in realtime
-          previous = 50;
-          current = 0;
-          nbH = 0;
-          nbL = 0;
-          for(var i = 0; i < data.datapoints.length; i++)
-          {
-            if ( self.graphdata[data.datapoints[i].at] === undefined )
+        var dfd = $.Deferred();
+
+        cosm.datastream.history(this.feed, stream, history_params, ( function(self, marker, label, dfd, toggle) {
+          return function( data ) {
+            //console.log(data); // Logs value changes in realtime
+            previous = 50;
+            current = 0;
+            nbH = 0;
+            nbL = 0;
+            for(var i = 0; i < data.datapoints.length; i++)
             {
-              self.graphdata[data.datapoints[i].at] = {y: data.datapoints[i].at}; 
+              if ( self.graphdata[data.datapoints[i].at] === undefined )
+              {
+                self.graphdata[data.datapoints[i].at] = {y: data.datapoints[i].at}; 
+              }
+              /* Insert Value */
+              self.graphdata[data.datapoints[i].at][marker] = data.datapoints[i].value;
+              if(toggle)
+              {
+                current = parseFloat(data.datapoints[i].value);
+                if(current > (previous + 0.1)) { self.graphdata[data.datapoints[i].at]["tt"] = 10; nbH++; }
+                else { self.graphdata[data.datapoints[i].at]["tt"] = 0; nbL++; }
+                previous = current;
+              }
             }
-            /* Insert Value */
-            self.graphdata[data.datapoints[i].at][marker] = data.datapoints[i].value;
-            if(toggle)
-            {
-              current = parseFloat(data.datapoints[i].value);
-              if(current > (previous + 0.1)) { self.graphdata[data.datapoints[i].at]["tt"] = 10; nbH++; }
-              else { self.graphdata[data.datapoints[i].at]["tt"] = 0; nbL++; }
-              previous = current;
+            console.log("Low : %d | High : %d", nbL, nbH);
+            self.nbH += nbH;
+            self.nbL += nbL;
+
+            if ($.inArray(marker, self.markers) < 0){
+              self.markers.push(marker); 
+              self.labels.push(label);
             }
+
+            dfd.resolve();
           }
-          console.log("Low : %d | High : %d", nbL, nbH);
-          self.nbH += nbH;
-          self.nbL += nbL;
+        })(this, marker, label, dfd, toggle));
 
-          self.markers.push(marker); 
-          self.labels.push(label);
-
-          dfd.resolve();
-        }
-      })(this, marker, label, dfd, toggle));
-
-      deferred_calls[s] = dfd.promise();
+        deferred_calls.push(dfd.promise());
+      }
     }
     return deferred_calls;
   }
@@ -445,7 +451,7 @@ $(document).ready(function() {
           dataforD3.push({ key: self.labels[l], values: datastyleD3[l]})
         }
 
-        //console.log(dataforD3);
+        console.log(dataforD3);
 
         $("#"+self.target).append("<svg style=\"height: 500px;\"></svg>");
 
@@ -487,27 +493,27 @@ $(document).ready(function() {
               { stream: 8, marker: 'c', label: 'Chambre'},
               { stream: 9, marker: 's', label: 'Salon'}];
 
-  var gen1 = new Graph("Températures intérieures - 6h", 'graph_intemp1', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 300, limit: 300, interval_type: 'discrete'});
+  var gen1 = new Graph("Températures intérieures - 6h", 'graph_intemp1', streams, feedtable[0].feed, [{start: moment().subtract('hours', 6).format(), interval: 300, limit: 300, interval_type: 'discrete'}]);
   gen1.getAllData();
 
   streams = [ { stream: 5, marker: 'o', label: 'Out'}, 
               { stream: 6, marker: 'i', label: 'In'}];
 
-  var gen2 = new Graph("Températures chaudière - 6h",'graph_intemp2', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 300, limit: 300, interval_type: 'discrete'});
+  var gen2 = new Graph("Températures chaudière - 6h",'graph_intemp2', streams, feedtable[0].feed, [{start: moment().subtract('hours', 6).format(), interval: 300, limit: 300, interval_type: 'discrete'}]);
   gen2.getAllData();
 
 
   streams = [ { stream: 1, marker: 't', label: 'Thermostat'},
               { stream: 3, marker: 'e', label: 'Exterieur'}];
 
-  var gen3 = new Graph("Températures intérieur / extérieur - 48h",'graph_intemp3', streams, feedtable[0].feed, {start: moment().subtract('hours', 48).format(), interval: 2400, limit: 300, interval_type: 'discrete'});
+  var gen3 = new Graph("Températures intérieur / extérieur - 48h",'graph_intemp3', streams, feedtable[0].feed, [{start: moment().subtract('hours', 48).format(), interval: 2400, limit: 300, interval_type: 'discrete'}]);
   gen3.getAllData();
 
   streams = [ { stream: 5, marker: 'o', label: 'Out', toggle: true}, 
               { stream: 6, marker: 'i', label: 'In'}];
 
-  var gen4 = new Graph("Températures chaudière - 24h",'graph_intemp4', streams, feedtable[0].feed, {start: moment().subtract('hours', 24).format(), interval: 300, limit: 1000, interval_type: 'discrete'});
-  gen4.getAllData();
+  //var gen4 = new Graph("Températures chaudière - 24h",'graph_intemp4', streams, feedtable[0].feed, [{start: moment().subtract('hours', 24).format(), interval: 300, limit: 1000, interval_type: 'discrete'}]);
+  //gen4.getAllData();
 
 
   streams = [ { stream: 5, marker: 'o', label: 'Out', toggle: true}, 
@@ -517,7 +523,12 @@ $(document).ready(function() {
   gen5.getAllData();
 */
 
-var slide1 = new Graph("Températures chaudière - 12h", 'chart', streams, feedtable[0].feed, {start: moment().subtract('hours', 11.9).format(), interval: 30, limit: 1000});
+var slide1 = new Graph("Températures chaudière - 24h", 'chart', streams, feedtable[0].feed,
+    [ {start: moment().subtract('hours', 24).format(), duration: '6hours', interval: 30, limit: 800},
+      {start: moment().subtract('hours', 18).format(), duration: '6hours', interval: 30, limit: 800},
+      {start: moment().subtract('hours', 12).format(), duration: '6hours', interval: 30, limit: 800},
+      {start: moment().subtract('hours',  6).format(), duration: '6hours', interval: 30, limit: 800} ] );
+
 slide1.getAllDataGenSlidingGraph();
 
 });
