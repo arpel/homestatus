@@ -66,6 +66,16 @@ svg {
         display: inline-block;
 }
 
+#bordered {
+      border: 1px solid red;
+    }
+
+    #noroll {
+      display: block;
+      height: 500px;
+      min-width: 400px;
+      min-height: 100px;
+    }
 
     </style>
 
@@ -149,12 +159,7 @@ svg {
     </div> <!-- /container -->
 
     <!-- Le javascript
-    ================================================== -->
-    <script src="js/d3.v3.min.js"></script>
-    <script src="js/nv.d3.min.js"></script>
-<script src="js/novus-nvd3-7058d53/src/models/lineWithFocusChart.js"></script>
-<script src="js/novus-nvd3-7058d53/examples/stream_layers.js"></script>
-
+    ================================================== -->  
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="http://code.jquery.com/jquery-latest.js"></script>
     <script src="js/bootstrap.min.js"></script>
@@ -165,6 +170,8 @@ svg {
     <script type="text/javascript" src="js/morris.min.js"></script>
 
     <script type="text/javascript" src="js/moment.min.js"></script>
+
+  <script src="js/dygraph-combined.js"></script>
 
 <script type="text/javascript">
 $(document).ready(function() {
@@ -295,7 +302,7 @@ $(document).ready(function() {
     feedtable[i].monitor.cosmRealTime();
   }
 
-  function Graph(title, target, streamsparams, feed, history_params)
+  function Graph(title, target, streamsparams, feed, history_params, type)
   {
     var self = this;
 
@@ -314,6 +321,10 @@ $(document).ready(function() {
     self.toggle = false;
     self.nbH = 0;
     self.nbL = 0;
+
+    if (type == "D3"){
+      self.graphtype = 3;
+    }
   }
 
   Graph.prototype.getData = function()
@@ -346,20 +357,44 @@ $(document).ready(function() {
             current = 0;
             nbH = 0;
             nbL = 0;
-            for(var i = 0; i < data.datapoints.length; i++)
-            {
-              if ( self.graphdata[data.datapoints[i].at] === undefined )
-              {
-                self.graphdata[data.datapoints[i].at] = {y: data.datapoints[i].at}; 
-              }
-              /* Insert Value */
-              self.graphdata[data.datapoints[i].at][marker] = data.datapoints[i].value;
+
+            if((self.graphtype == 3) && (self.graphdata[marker] === undefined)){
+              self.graphdata[marker] = [];
               if(toggle)
+                self.graphdata["tt"] = [];
+            }
+
+            if (data.datapoints !== undefined)
+            {
+              for(var i = 0; i < data.datapoints.length; i++)
               {
-                current = parseFloat(data.datapoints[i].value);
-                if(current > (previous + 0.1)) { self.graphdata[data.datapoints[i].at]["tt"] = 10; nbH++; }
-                else { self.graphdata[data.datapoints[i].at]["tt"] = 0; nbL++; }
-                previous = current;
+                if(self.graphtype == 3)
+                {
+                  when =  moment(data.datapoints[i].at).valueOf();
+                  //self.graphdata[marker].push({x: moment(data.datapoints[i].at).valueOf(), y: parseFloat(data.datapoints[i].value)});
+                  self.graphdata[marker].push({x: when, y: parseFloat(data.datapoints[i].value)});
+                  if(toggle)
+                  {
+                    current = parseFloat(data.datapoints[i].value);
+                    if(current > (previous + 0.1)) { self.graphdata["tt"].push({x: when, y: 10.0}); nbH++; }
+                    else { self.graphdata["tt"].push({x: when, y: 0.0}); nbL++; }
+                    previous = current;
+                  }
+                } else {
+                  if ( self.graphdata[data.datapoints[i].at] === undefined )
+                  {
+                    self.graphdata[data.datapoints[i].at] = {y: data.datapoints[i].at}; 
+                  }
+                  /* Insert Value */
+                  self.graphdata[data.datapoints[i].at][marker] = data.datapoints[i].value;
+                  if(toggle)
+                  {
+                    current = parseFloat(data.datapoints[i].value);
+                    if(current > (previous + 0.1)) { self.graphdata[data.datapoints[i].at]["tt"] = 10; nbH++; }
+                    else { self.graphdata[data.datapoints[i].at]["tt"] = 0; nbL++; }
+                    previous = current;
+                  }
+                }
               }
             }
             console.log("Low : %d | High : %d", nbL, nbH);
@@ -417,11 +452,7 @@ $(document).ready(function() {
     $.when.apply(this, this.getData()).done( ( function(self) {
       return function () {
         //console.log(self.graphdata);
-        data = [];
-        for ( k in self.graphdata ){
-          data.push(self.graphdata[k]);
-        }
-        //console.log(data);
+        
         markers = self.markers;
         labels = self.labels;
 
@@ -430,28 +461,12 @@ $(document).ready(function() {
           labels.push("Toggle");
         }
 
-        datastyleD3 = [];
-        for(m in self.markers){
-          datastyleD3[m] = [];
-        }
-
-        for ( k in self.graphdata ){
-          x = self.graphdata[k]["y"];
-          for(m in self.markers){
-            if(self.graphdata[k][self.markers[m]] != undefined)
-            {
-              y = self.graphdata[k][self.markers[m]];
-              datastyleD3[m].push({x: moment(x).valueOf(), y: parseFloat(y)});
-            }
-          }
-        }
-
         dataforD3 = [];
-        for(l in self.labels){
-          dataforD3.push({ key: self.labels[l], values: datastyleD3[l]})
+        for(l in labels){
+          dataforD3.push({ key: labels[l], values: self.graphdata[markers[l]]});
         }
 
-        console.log(dataforD3);
+        //console.log(dataforD3);
 
         $("#"+self.target).append("<svg style=\"height: 500px;\"></svg>");
 
@@ -466,20 +481,78 @@ $(document).ready(function() {
             return d3.time.format('%H:%M:%S')(new Date(d))
           }); 
 
-          chart.yAxis
-              .tickFormat(d3.format(',.2f'));
-          chart.y2Axis
-              .tickFormat(d3.format(',.2f'));
+          chart.yAxis.tickFormat(d3.format(',.2f'));
+          chart.y2Axis.tickFormat(d3.format(',.2f'));
 
           d3.select('#'+self.target+' svg')
               .datum(dataforD3)
-            .transition().duration(100)
               .call(chart);
 
-          nv.utils.windowResize(chart.update);
+          //nv.utils.windowResize(chart.update);
 
           return chart;
         });
+
+        /* Some stats */
+        $("#"+self.target).append("<p class=\"stats\"> On : "+self.nbH+" | Off : "+self.nbL+" | % On : "+(self.nbH*100/(self.nbH+self.nbL))+"</p>");
+      }
+    })(this));
+
+  }
+
+  Graph.prototype.getAllDataGenSlidingGraphDygraph = function()
+  {
+    $.when.apply(this, this.getData()).done( ( function(self) {
+      return function () {
+        //console.log(self.graphdata);
+        
+        markers = self.markers;
+        labels = self.labels;
+
+        if(self.toggle) {
+          markers.push("tt");
+          labels.push("Toggle");
+        }
+
+        $("#"+self.target).append("<div id=\"noroll\"></div>");
+        
+        data = [];
+
+        for (di in self.graphdata) 
+        {
+          item = [ new Date(self.graphdata[di].y) ];
+          for(t in markers)
+          {
+            if(self.graphdata[di][markers[t]] !== undefined)
+              item.push(parseFloat(self.graphdata[di][markers[t]]));
+            else
+              item.push(null);
+          }
+          data.push(item);
+        };
+
+        //console.log(data);
+
+        data.sort( function compareFunction(a, b){
+          return a[0] - b[0];
+        });
+
+        //console.log(data);
+
+        g1 = new Dygraph(
+          document.getElementById("noroll"),
+          data,
+          {
+            //title: 'Daily Temperatures in New York vs. San Francisco',
+            ylabel: 'Température (C)',
+            labels: ["x"].concat(labels),
+            legend: 'always',
+            labelsDivStyles: { 'textAlign': 'right' },
+            showRangeSelector: true,
+            rangeSelectorPlotFillColor: "",
+            connectSeparatedPoints: true
+          }
+        );
 
         /* Some stats */
         $("#"+self.target).append("<p class=\"stats\"> On : "+self.nbH+" | Off : "+self.nbL+" | % On : "+(self.nbH*100/(self.nbH+self.nbL))+"</p>");
@@ -499,8 +572,8 @@ $(document).ready(function() {
   streams = [ { stream: 5, marker: 'o', label: 'Out'}, 
               { stream: 6, marker: 'i', label: 'In'}];
 
-  var gen2 = new Graph("Températures chaudière - 6h",'graph_intemp2', streams, feedtable[0].feed, [{start: moment().subtract('hours', 6).format(), interval: 300, limit: 300, interval_type: 'discrete'}]);
-  gen2.getAllData();
+  //var gen2 = new Graph("Températures chaudière - 6h",'graph_intemp2', streams, feedtable[0].feed, [{start: moment().subtract('hours', 6).format(), interval: 300, limit: 300, interval_type: 'discrete'}]);
+  //gen2.getAllData();
 
 
   streams = [ { stream: 1, marker: 't', label: 'Thermostat'},
@@ -527,9 +600,12 @@ var slide1 = new Graph("Températures chaudière - 24h", 'chart', streams, feedt
     [ {start: moment().subtract('hours', 24).format(), duration: '6hours', interval: 30, limit: 800},
       {start: moment().subtract('hours', 18).format(), duration: '6hours', interval: 30, limit: 800},
       {start: moment().subtract('hours', 12).format(), duration: '6hours', interval: 30, limit: 800},
-      {start: moment().subtract('hours',  6).format(), duration: '6hours', interval: 30, limit: 800} ] );
-
-slide1.getAllDataGenSlidingGraph();
+      {start: moment().subtract('hours',  6).format(), duration: '6hours', interval: 30, limit: 800} ]);
+/*
+var slide1 = new Graph("Températures chaudière - 24h", 'chart', streams, feedtable[0].feed,
+    [ {start: moment().subtract('hours', 24).format(), duration: '1hours', interval: 30, limit: 800}]);
+*/
+slide1.getAllDataGenSlidingGraphDygraph();
 
 });
 
