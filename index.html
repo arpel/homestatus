@@ -70,12 +70,12 @@ svg {
       border: 1px solid red;
     }
 
-    #noroll {
-      display: block;
-      height: 500px;
-      min-width: 400px;
-      min-height: 100px;
-    }
+.noroll {
+  display: block;
+  height: 500px;
+  min-width: 400px;
+  min-height: 100px;
+}
 
     </style>
 
@@ -163,7 +163,7 @@ svg {
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="http://code.jquery.com/jquery-latest.js"></script>
     <script src="js/bootstrap.min.js"></script>
-    <script src="http://d23cj0cdvyoxg0.cloudfront.net/cosmjs-1.0.0.min.js"></script>  
+    <script src="http://d23cj0cdvyoxg0.cloudfront.net/xivelyjs-1.0.4.min.js"></script>
     <script type="text/javascript" src="js/jquery.easy-pie-chart.js"></script>
 
     <script type="text/javascript" src="js/raphael-min.js"></script>
@@ -223,7 +223,7 @@ $(document).ready(function() {
 
   moment.lang('fr');
 
-  cosm.setKey( "bI-PWNeyFPrHnJOq7tclJGLVjDiSAKxOSlRJNVVYMTBnbz0g" );
+  xively.setKey( "bI-PWNeyFPrHnJOq7tclJGLVjDiSAKxOSlRJNVVYMTBnbz0g" );
 
   var containers = "tempholder_";
 
@@ -256,7 +256,7 @@ $(document).ready(function() {
 
     this.cosmOneTime = function(){
       //console.log(this);
-      cosm.datastream.get( this.feed.feed, this.feed.datastream, ( function(self) {
+      xively.datastream.get( this.feed.feed, this.feed.datastream, ( function(self) {
         return function( data ) {
           //console.log(self);
           self.element.data('easyPieChart').update(self.valueToRatio(self, data.current_value));
@@ -269,7 +269,7 @@ $(document).ready(function() {
 
     this.cosmRealTime = function(){
       //console.log(this);
-      cosm.datastream.subscribe( this.feed.feed, this.feed.datastream, ( function(self) {
+      xively.datastream.subscribe( this.feed.feed, this.feed.datastream, ( function(self) {
         return function( event, data ) {
           self.element.data('easyPieChart').update(self.valueToRatio(self, data.current_value));
           $('span', self.element).text(data.current_value+data.unit.label);
@@ -350,7 +350,7 @@ $(document).ready(function() {
 
         var dfd = $.Deferred();
 
-        cosm.datastream.history(this.feed, stream, history_params, ( function(self, marker, label, dfd, toggle) {
+        xively.datastream.history(this.feed, stream, history_params, ( function(self, marker, label, dfd, toggle) { 
           return function( data ) {
             //console.log(data); // Logs value changes in realtime
             previous = 50;
@@ -514,7 +514,7 @@ $(document).ready(function() {
           labels.push("Toggle");
         }
 
-        $("#"+self.target).append("<div id=\"noroll\"></div>");
+        $("#"+self.target).append("<div class=\"noroll\" id=\"slidingDygraph_"+self.target+"\"></div>");
         
         data = [];
 
@@ -540,7 +540,7 @@ $(document).ready(function() {
         //console.log(data);
 
         g1 = new Dygraph(
-          document.getElementById("noroll"),
+          document.getElementById("slidingDygraph_"+self.target),
           data,
           {
             //title: 'Daily Temperatures in New York vs. San Francisco',
@@ -606,6 +606,15 @@ var slide1 = new Graph("Températures chaudière - 24h", 'chart', streams, feedt
     [ {start: moment().subtract('hours', 24).format(), duration: '1hours', interval: 30, limit: 800}]);
 */
 slide1.getAllDataGenSlidingGraphDygraph();
+
+
+ streams = [ { stream: 1, marker: 't', label: 'Thermostat'},
+              { stream: 3, marker: 'e', label: 'Exterieur'}];
+
+var slide2 = new Graph("Températures intérieur / extérieur - 3mois",'chart2', streams, feedtable[0].feed, 
+  [{start: moment().subtract('days', 88).format(), interval: 21600, limit : 500, interval_type: 'discrete'}]);
+
+slide2.getAllDataGenSlidingGraphDygraph();
 
 });
 
