@@ -3,7 +3,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Bootstrap, from Twitter</title>
+    <title>HomeStatus @ CZERU</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -107,11 +107,11 @@ svg {
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </a>
-          <a class="brand" href="#">Project name</a>
+          <a class="brand" href="#">HomeStatus</a>
           <div class="nav-collapse collapse">
             <ul class="nav">
               <li class="active"><a href="#">Home</a></li>
-              <li><a href="#about">About</a></li>
+              <li><a href="TempDetails.html">Details</a></li>
               <li><a href="#contact">Contact</a></li>
               <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dropdown <b class="caret"></b></a>
@@ -149,9 +149,6 @@ svg {
 
       <hr>
 
-<div id="othergraphs">
-</div>
-
       <footer>
         <p>&copy; TM 2013</p>
       </footer>
@@ -170,58 +167,16 @@ svg {
     <script type="text/javascript" src="js/morris.min.js"></script>
 
     <script type="text/javascript" src="js/moment.min.js"></script>
-
-  <script src="js/dygraph-combined.js"></script>
+<!--
+    <script src="js/dygraph-combined.js"></script>
+ -->
+    <script src="js/homestatus.js"></script>
 
 <script type="text/javascript">
+
 $(document).ready(function() {
 
-  moment.lang('fr', {
-    months : "Janvier_Février_Mars_Avril_Mai_Juin_Juillet_Aout_Septembre_Octobre_Novembre_Décembre".split("_"),
-    monthsShort : "Jan_Fev_Mar_Avr_Mai_Juin_Juil_Aou_Sep_Oct_Nov_Dec".split("_"),
-    weekdays : "Dimanche_Lundi_Mardi_Mercredi_Jeudi_Vendredi_Samedi".split("_"),
-    weekdaysShort : "Dim_Lun_Mar_Mer_Jeu_Ven_Sam".split("_"),
-    longDateFormat : {
-        L : "DD/MM/YYYY",
-        LL : "D MMMM YYYY",
-        LLL : "D MMMM YYYY HH:mm",
-        LLLL : "dddd, D MMMM YYYY HH:mm"
-    },
-    meridiem : {
-        AM : 'AM',
-        am : 'am',
-        PM : 'PM',
-        pm : 'pm'
-    },
-    calendar : {
-        sameDay: "[Ajourd'hui à] LT",
-        nextDay: '[Demain à] LT',
-        nextWeek: 'dddd [à] LT',
-        lastDay: '[Hier à] LT',
-        lastWeek: 'dddd [denier à] LT',
-        sameElse: 'L'
-    },
-    relativeTime : {
-        future : "dans %s",
-        past : "il y a %s",
-        s : "secondes",
-        m : "une minute",
-        mm : "%d minutes",
-        h : "une heure",
-        hh : "%d heures",
-        d : "un jour",
-        dd : "%d jours",
-        M : "un mois",
-        MM : "%d mois",
-        y : "une année",
-        yy : "%d années"
-    },
-    ordinal : function (number) {
-        return (~~ (number % 100 / 10) === 1) ? 'er' : 'ème';
-    }
-});
-
-  moment.lang('fr');
+  SetupMoment();
 
   xively.setKey( "bI-PWNeyFPrHnJOq7tclJGLVjDiSAKxOSlRJNVVYMTBnbz0g" );
 
@@ -234,60 +189,7 @@ $(document).ready(function() {
                     { feed: "97289", datastream: "6", title: "Chaudière IN",  minmax: [15, 85],  greenzone: [20, 55]},
                     { feed: "97289", datastream: "5", title: "Chaudière OUT", minmax: [15, 85],  greenzone: [20, 55]}];
 
-
-  function Tempmonitor(feedelement){
-    this.minmax = feedelement.minmax;
-    this.greenzone = feedelement.greenzone;
-    this.element = feedelement.element;
-    this.feed = feedelement;
-
-    this.valueToRatio = function(self, value){
-      return 100*(Math.abs(parseFloat(value)-self.minmax[0]))/(self.minmax[1]-self.minmax[0]);
-    };
-
-    this.colorbyValue = function(self, value){
-      if(value < this.valueToRatio(self, self.greenzone[0]))
-        return "blue";
-      if(value < this.valueToRatio(self, self.greenzone[1]))
-        return "green";
-
-      return "red";
-    };
-
-    this.cosmOneTime = function(){
-      //console.log(this);
-      xively.datastream.get( this.feed.feed, this.feed.datastream, ( function(self) {
-        return function( data ) {
-          //console.log(self);
-          self.element.data('easyPieChart').update(self.valueToRatio(self, data.current_value));
-          $('span', self.element).text(data.current_value+data.unit.label);
-          $('#at', self.feed.masterelement).text(moment(data.at).fromNow());
-        //console.log( data.current_value ); // Logs value changes in realtime
-        };
-      })(this));
-    };
-
-    this.cosmRealTime = function(){
-      //console.log(this);
-      xively.datastream.subscribe( this.feed.feed, this.feed.datastream, ( function(self) {
-        return function( event, data ) {
-          self.element.data('easyPieChart').update(self.valueToRatio(self, data.current_value));
-          $('span', self.element).text(data.current_value+data.unit.label);
-          $('#at', self.feed.masterelement).text(moment(data.at).fromNow());
-          console.log( data.current_value ); // Logs value changes in realtime
-        };
-      })(this));
-    };
-
-    this.createPie = function (){
-      this.element.easyPieChart({
-        animate: 1000,
-        barColor: ( function(self) { return function(data) { return self.colorbyValue(self, data); } } )(this),
-        lineWidth: 5
-      });
-    };
-  }
-
+  /* Generate all Temp monitors */
   for(var i = 0; i < feedtable.length; i++){
     feedtable[i].container = containers+i;
 
@@ -301,266 +203,6 @@ $(document).ready(function() {
     feedtable[i].monitor.cosmOneTime();
     feedtable[i].monitor.cosmRealTime();
   }
-
-  function Graph(title, target, streamsparams, feed, history_params, type)
-  {
-    var self = this;
-
-    self.graphdata = [];
-    
-    self.streams = streamsparams;
-    self.feed = feed;
-    self.history_params = history_params;
-    
-    self.markers = [];
-    self.labels = [];
-
-    self.target = target;
-    $("#detailedgraphs").append("<div><h3>"+title+"</h3><div id=\""+target+"\"></div></div><hr>");
-
-    self.toggle = false;
-    self.nbH = 0;
-    self.nbL = 0;
-
-    if (type == "D3"){
-      self.graphtype = 3;
-    }
-  }
-
-  Graph.prototype.getData = function()
-  {
-    deferred_calls = [];
-    for (s in this.streams)
-    {
-      stream = this.streams[s].stream;
-      marker = this.streams[s].marker;
-      label = this.streams[s].label;
-
-      if(this.streams[s].toggle == undefined)
-      {
-        toggle = false;
-      } else 
-      {
-        toggle = this.streams[s].toggle;
-        this.toggle = true;
-      }
-
-      for(history_seq in this.history_params){
-        history_params = this.history_params[history_seq];
-
-        var dfd = $.Deferred();
-
-        xively.datastream.history(this.feed, stream, history_params, ( function(self, marker, label, dfd, toggle) { 
-          return function( data ) {
-            //console.log(data); // Logs value changes in realtime
-            previous = 50;
-            current = 0;
-            nbH = 0;
-            nbL = 0;
-
-            if((self.graphtype == 3) && (self.graphdata[marker] === undefined)){
-              self.graphdata[marker] = [];
-              if(toggle)
-                self.graphdata["tt"] = [];
-            }
-
-            if (data.datapoints !== undefined)
-            {
-              for(var i = 0; i < data.datapoints.length; i++)
-              {
-                if(self.graphtype == 3)
-                {
-                  when =  moment(data.datapoints[i].at).valueOf();
-                  //self.graphdata[marker].push({x: moment(data.datapoints[i].at).valueOf(), y: parseFloat(data.datapoints[i].value)});
-                  self.graphdata[marker].push({x: when, y: parseFloat(data.datapoints[i].value)});
-                  if(toggle)
-                  {
-                    current = parseFloat(data.datapoints[i].value);
-                    if(current > (previous + 0.1)) { self.graphdata["tt"].push({x: when, y: 10.0}); nbH++; }
-                    else { self.graphdata["tt"].push({x: when, y: 0.0}); nbL++; }
-                    previous = current;
-                  }
-                } else {
-                  if ( self.graphdata[data.datapoints[i].at] === undefined )
-                  {
-                    self.graphdata[data.datapoints[i].at] = {y: data.datapoints[i].at}; 
-                  }
-                  /* Insert Value */
-                  self.graphdata[data.datapoints[i].at][marker] = data.datapoints[i].value;
-                  if(toggle)
-                  {
-                    current = parseFloat(data.datapoints[i].value);
-                    if(current > (previous + 0.1)) { self.graphdata[data.datapoints[i].at]["tt"] = 10; nbH++; }
-                    else { self.graphdata[data.datapoints[i].at]["tt"] = 0; nbL++; }
-                    previous = current;
-                  }
-                }
-              }
-            }
-            console.log("Low : %d | High : %d", nbL, nbH);
-            self.nbH += nbH;
-            self.nbL += nbL;
-
-            if ($.inArray(marker, self.markers) < 0){
-              self.markers.push(marker); 
-              self.labels.push(label);
-            }
-
-            dfd.resolve();
-          }
-        })(this, marker, label, dfd, toggle));
-
-        deferred_calls.push(dfd.promise());
-      }
-    }
-    return deferred_calls;
-  }
-
-  Graph.prototype.getAllData = function()
-  {
-    $.when.apply(this, this.getData()).done( ( function(self) {
-      return function () {
-        //console.log(self.graphdata);
-        data = [];
-        for ( k in self.graphdata ){
-          data.push(self.graphdata[k]);
-        }
-        //console.log(data);
-        markers = self.markers;
-        labels = self.labels;
-
-        if(self.toggle) {
-          markers.push("tt");
-          labels.push("Toggle");
-        }
-
-        Morris.Line({
-          element: self.target,
-          data: data,
-          xkey: 'y',
-          ykeys: markers,
-          labels: labels,
-          ymin : 'auto'
-        });
-      }
-    })(this));
-  }
-
-
-  Graph.prototype.getAllDataGenSlidingGraph = function()
-  {
-    $.when.apply(this, this.getData()).done( ( function(self) {
-      return function () {
-        //console.log(self.graphdata);
-        
-        markers = self.markers;
-        labels = self.labels;
-
-        if(self.toggle) {
-          markers.push("tt");
-          labels.push("Toggle");
-        }
-
-        dataforD3 = [];
-        for(l in labels){
-          dataforD3.push({ key: labels[l], values: self.graphdata[markers[l]]});
-        }
-
-        //console.log(dataforD3);
-
-        $("#"+self.target).append("<svg style=\"height: 500px;\"></svg>");
-
-        nv.addGraph(function() {
-          var chart = nv.models.lineWithFocusChart();
-
-          chart.xAxis.tickFormat(function(d) {
-            return d3.time.format('%H:%M:%S')(new Date(d))
-          }); 
-
-          chart.x2Axis.tickFormat(function(d) {
-            return d3.time.format('%H:%M:%S')(new Date(d))
-          }); 
-
-          chart.yAxis.tickFormat(d3.format(',.2f'));
-          chart.y2Axis.tickFormat(d3.format(',.2f'));
-
-          d3.select('#'+self.target+' svg')
-              .datum(dataforD3)
-              .call(chart);
-
-          //nv.utils.windowResize(chart.update);
-
-          return chart;
-        });
-
-        /* Some stats */
-        $("#"+self.target).append("<p class=\"stats\"> On : "+self.nbH+" | Off : "+self.nbL+" | % On : "+(self.nbH*100/(self.nbH+self.nbL))+"</p>");
-      }
-    })(this));
-
-  }
-
-  Graph.prototype.getAllDataGenSlidingGraphDygraph = function()
-  {
-    $.when.apply(this, this.getData()).done( ( function(self) {
-      return function () {
-        //console.log(self.graphdata);
-        
-        markers = self.markers;
-        labels = self.labels;
-
-        if(self.toggle) {
-          markers.push("tt");
-          labels.push("Toggle");
-        }
-
-        $("#"+self.target).append("<div class=\"noroll\" id=\"slidingDygraph_"+self.target+"\"></div>");
-        
-        data = [];
-
-        for (di in self.graphdata) 
-        {
-          item = [ new Date(self.graphdata[di].y) ];
-          for(t in markers)
-          {
-            if(self.graphdata[di][markers[t]] !== undefined)
-              item.push(parseFloat(self.graphdata[di][markers[t]]));
-            else
-              item.push(null);
-          }
-          data.push(item);
-        };
-
-        //console.log(data);
-
-        data.sort( function compareFunction(a, b){
-          return a[0] - b[0];
-        });
-
-        //console.log(data);
-
-        g1 = new Dygraph(
-          document.getElementById("slidingDygraph_"+self.target),
-          data,
-          {
-            //title: 'Daily Temperatures in New York vs. San Francisco',
-            ylabel: 'Température (C)',
-            labels: ["x"].concat(labels),
-            legend: 'always',
-            labelsDivStyles: { 'textAlign': 'right' },
-            showRangeSelector: true,
-            rangeSelectorPlotFillColor: "",
-            connectSeparatedPoints: true
-          }
-        );
-
-        /* Some stats */
-        $("#"+self.target).append("<p class=\"stats\"> On : "+self.nbH+" | Off : "+self.nbL+" | % On : "+(self.nbH*100/(self.nbH+self.nbL))+"</p>");
-      }
-    })(this));
-
-  }
-
 
   streams = [ { stream: 1, marker: 't', label: 'Thermostat'}, 
               { stream: 8, marker: 'c', label: 'Chambre'},
@@ -588,33 +230,6 @@ $(document).ready(function() {
   //var gen4 = new Graph("Températures chaudière - 24h",'graph_intemp4', streams, feedtable[0].feed, [{start: moment().subtract('hours', 24).format(), interval: 300, limit: 1000, interval_type: 'discrete'}]);
   //gen4.getAllData();
 
-
-  streams = [ { stream: 5, marker: 'o', label: 'Out', toggle: true}, 
-              { stream: 6, marker: 'i', label: 'In'}];
-
-/*  var gen5 = new Graph("Températures chaudière - 6h",'graph_intemp5', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 30, limit: 1000});
-  gen5.getAllData();
-*/
-
-var slide1 = new Graph("Températures chaudière - 24h", 'chart', streams, feedtable[0].feed,
-    [ {start: moment().subtract('hours', 24).format(), duration: '6hours', interval: 30, limit: 800},
-      {start: moment().subtract('hours', 18).format(), duration: '6hours', interval: 30, limit: 800},
-      {start: moment().subtract('hours', 12).format(), duration: '6hours', interval: 30, limit: 800},
-      {start: moment().subtract('hours',  6).format(), duration: '6hours', interval: 30, limit: 800} ]);
-/*
-var slide1 = new Graph("Températures chaudière - 24h", 'chart', streams, feedtable[0].feed,
-    [ {start: moment().subtract('hours', 24).format(), duration: '1hours', interval: 30, limit: 800}]);
-*/
-slide1.getAllDataGenSlidingGraphDygraph();
-
-
- streams = [ { stream: 1, marker: 't', label: 'Thermostat'},
-              { stream: 3, marker: 'e', label: 'Exterieur'}];
-
-var slide2 = new Graph("Températures intérieur / extérieur - 3mois",'chart2', streams, feedtable[0].feed, 
-  [{start: moment().subtract('days', 88).format(), interval: 21600, limit : 500, interval_type: 'discrete'}]);
-
-slide2.getAllDataGenSlidingGraphDygraph();
 
 });
 
