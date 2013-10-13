@@ -99,7 +99,7 @@ svg {
 
   <body>
 
-    <div class="navbar navbar-inverse navbar-fixed-top">
+   <div class="navbar navbar-inverse navbar-fixed-top">
       <div class="navbar-inner">
         <div class="container">
           <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
@@ -110,13 +110,13 @@ svg {
           <a class="brand" href="#">HomeStatus</a>
           <div class="nav-collapse collapse">
             <ul class="nav">
-              <li class="active"><a href="#">Home</a></li>
+              <li><a href="#">Home</a></li>
               <li><a href="TempDetails.html">Details</a></li>
 
-              <li class="dropdown">
+              <li class="dropdown active">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown">Chauffage <b class="caret"></b></a>
                 <ul class="dropdown-menu">
-                  <li><a href="TempDetailsNew.html">Details - New version</a></li>
+                  <li class="active"><a href="TempDetailsNew.html">Details - New version</a></li>
                   <li><a href="#">Another action</a></li>
                 </ul>
               </li>
@@ -147,17 +147,12 @@ svg {
 
     <div class="container">
 
-      <div class="tempmonitors">
-        <h1>Monitors</h1>
-        <div id="tempmonitors"></div>
-      </div>
-
       <div class="tempmonitors" id="detailedgraphs">
-        <h1>Graphs</h1>
+        <h1>Detailed Graphs</h1>
       </div>
 
       <hr>
-
+      
       <footer>
         <p>&copy; TM 2013</p>
       </footer>
@@ -170,15 +165,16 @@ svg {
     <script src="http://code.jquery.com/jquery-latest.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="http://d23cj0cdvyoxg0.cloudfront.net/xivelyjs-1.0.4.min.js"></script>
+
+    <!--
     <script type="text/javascript" src="js/jquery.easy-pie-chart.js"></script>
 
     <script type="text/javascript" src="js/raphael-min.js"></script>
     <script type="text/javascript" src="js/morris.min.js"></script>
-
+-->
     <script type="text/javascript" src="js/moment.min.js"></script>
-<!--
+
     <script src="js/dygraph-combined.js"></script>
- -->
     <script src="js/homestatus.js"></script>
 
 <script type="text/javascript">
@@ -198,47 +194,34 @@ $(document).ready(function() {
                     { feed: "97289", datastream: "6", title: "Chaudière IN",  minmax: [15, 85],  greenzone: [20, 55]},
                     { feed: "97289", datastream: "5", title: "Chaudière OUT", minmax: [15, 85],  greenzone: [20, 55]}];
 
-  /* Generate all Temp monitors */
-  for(var i = 0; i < feedtable.length; i++){
-    feedtable[i].container = containers+i;
-
-    $("#tempmonitors").append("<div class=\"tempmonitor "+feedtable[i].container+"\"><p>"+feedtable[i].title+"</p><div class=\"tempgauge\" data-percent=\"0\"><span></span></div><p id=\"at\">TEST</p></div>");
-
-    feedtable[i].masterelement =  $("."+feedtable[i].container);
-    feedtable[i].element =  $(".tempgauge", feedtable[i].masterelement);
-
-    feedtable[i].monitor = new Tempmonitor(feedtable[i]);
-    feedtable[i].monitor.createPie();
-    feedtable[i].monitor.cosmOneTime();
-    feedtable[i].monitor.cosmRealTime();
-  }
-
-  streams = [ { stream: 1, marker: 't', label: 'Thermostat'}, 
-              { stream: 8, marker: 'c', label: 'Chambre'},
-              { stream: 9, marker: 's', label: 'Salon'}];
-
-  var gen1 = new Graph("Températures intérieures - 6h", 'graph_intemp1', streams, feedtable[0].feed, [{start: moment().subtract('hours', 6).format(), interval: 300, limit: 300, interval_type: 'discrete'}]);
-  gen1.getAllData();
-
-  streams = [ { stream: 5, marker: 'o', label: 'Out'}, 
-              { stream: 6, marker: 'i', label: 'In'}];
-
-  //var gen2 = new Graph("Températures chaudière - 6h",'graph_intemp2', streams, feedtable[0].feed, [{start: moment().subtract('hours', 6).format(), interval: 300, limit: 300, interval_type: 'discrete'}]);
-  //gen2.getAllData();
-
-
-  streams = [ { stream: 1, marker: 't', label: 'Thermostat'},
-              { stream: 3, marker: 'e', label: 'Exterieur'}];
-
-  var gen3 = new Graph("Températures intérieur / extérieur - 48h",'graph_intemp3', streams, feedtable[0].feed, [{start: moment().subtract('hours', 48).format(), interval: 2400, limit: 300, interval_type: 'discrete'}]);
-  gen3.getAllData();
+  /* Generate all detailled sliding graphs */
 
   streams = [ { stream: 5, marker: 'o', label: 'Out', toggle: true}, 
               { stream: 6, marker: 'i', label: 'In'}];
 
-  //var gen4 = new Graph("Températures chaudière - 24h",'graph_intemp4', streams, feedtable[0].feed, [{start: moment().subtract('hours', 24).format(), interval: 300, limit: 1000, interval_type: 'discrete'}]);
-  //gen4.getAllData();
+/*  var gen5 = new Graph("Températures chaudière - 6h",'graph_intemp5', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 30, limit: 1000});
+  gen5.getAllData();
+*/
 
+var slide1 = new Graph("Températures chaudière - 24h", 'chart', streams, feedtable[0].feed,
+    [ {start: moment().subtract('hours', 24).format(), duration: '6hours', interval: 30, limit: 800},
+      {start: moment().subtract('hours', 18).format(), duration: '6hours', interval: 30, limit: 800},
+      {start: moment().subtract('hours', 12).format(), duration: '6hours', interval: 30, limit: 800},
+      {start: moment().subtract('hours',  6).format(), duration: '6hours', interval: 30, limit: 800} ]);
+/*
+var slide1 = new Graph("Températures chaudière - 24h", 'chart', streams, feedtable[0].feed,
+    [ {start: moment().subtract('hours', 24).format(), duration: '1hours', interval: 30, limit: 800}]);
+*/
+slide1.getAllDataGenSlidingGraphDygraph();
+
+
+ streams = [ { stream: 1, marker: 't', label: 'Thermostat'},
+              { stream: 3, marker: 'e', label: 'Exterieur'}];
+
+var slide2 = new Graph("Températures intérieur / extérieur - 3mois",'chart2', streams, feedtable[0].feed, 
+  [{start: moment().subtract('days', 88).format(), interval: 21600, limit : 500, interval_type: 'discrete'}]);
+
+slide2.getAllDataGenSlidingGraphDygraph();
 
 });
 
