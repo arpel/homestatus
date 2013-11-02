@@ -447,9 +447,7 @@ function Tempmonitor(feedelement){
 
               for (zi in self.toggledata){
                 if(self.toggledata[zi].length == 2)
-                {
                   highlight_period(new Date(self.toggledata[zi][0]), new Date(self.toggledata[zi][1]));
-                }
               }
             }
           }

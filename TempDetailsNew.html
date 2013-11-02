@@ -107,16 +107,16 @@ svg {
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </a>
-          <a class="brand" href="#">HomeStatus</a>
+          <a class="brand" href="index.html">HomeStatus</a>
           <div class="nav-collapse collapse">
             <ul class="nav">
-              <li><a href="#">Home</a></li>
+              <li><a href="index.html">Home</a></li>
               <li><a href="TempDetails.html">Details</a></li>
 
               <li class="dropdown active">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown">Chauffage <b class="caret"></b></a>
                 <ul class="dropdown-menu">
-                  <li class="active"><a href="TempDetailsNew.html">Details - New version</a></li>
+                  <li class="active"><a href="#">Details - New version</a></li>
                   <li><a href="#">Another action</a></li>
                 </ul>
               </li>
@@ -207,12 +207,13 @@ var slide1 = new Graph("Températures chaudière - 24h", 'chart', streams, feedt
     [ {start: moment().subtract('hours', 24).format(), duration: '6hours', interval: 30, limit: 800},
       {start: moment().subtract('hours', 18).format(), duration: '6hours', interval: 30, limit: 800},
       {start: moment().subtract('hours', 12).format(), duration: '6hours', interval: 30, limit: 800},
-      {start: moment().subtract('hours',  6).format(), duration: '6hours', interval: 30, limit: 800} ]);
+      {start: moment().subtract('hours',  6).format(), duration: '6hours', interval: 30, limit: 800} ],
+      10);
 /*
 var slide1 = new Graph("Températures chaudière - 24h", 'chart', streams, feedtable[0].feed,
     [ {start: moment().subtract('hours', 24).format(), duration: '1hours', interval: 30, limit: 800}]);
 */
-slide1.getAllDataGenSlidingGraphDygraph();
+slide1.getAllDataGenSlidingGraphDygraphNew();
 
 
  streams = [ { stream: 1, marker: 't', label: 'Thermostat'},
