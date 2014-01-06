@@ -100,6 +100,39 @@ function Tempmonitor(feedelement){
     };
   }
 
+  function LabelMonitor(feedelement){
+    this.minmax = feedelement.minmax;
+    this.greenzone = feedelement.greenzone;
+    this.element = feedelement.element;
+    this.feed = feedelement;
+
+    this.cosmOneTime = function(){
+      //console.log(this);
+      xively.datastream.get( this.feed.feed, this.feed.datastream, ( function(self) {
+        return function( data ) {
+          //console.log(self);
+          self.element.data('easyPieChart').update(self.valueToRatio(self, data.current_value));
+          $('span', self.element).text(data.current_value+data.unit.label);
+          $('#at', self.feed.masterelement).text(moment(data.at).fromNow());
+        //console.log( data.current_value ); // Logs value changes in realtime
+        };
+      })(this));
+    };
+
+    this.cosmRealTime = function(){
+      //console.log(this);
+      xively.datastream.subscribe( this.feed.feed, this.feed.datastream, ( function(self) {
+        return function( event, data ) {
+          self.element.data('easyPieChart').update(self.valueToRatio(self, data.current_value));
+          $('span', self.element).text(data.current_value+data.unit.label);
+          $('#at', self.feed.masterelement).text(moment(data.at).fromNow());
+          console.log( data.current_value ); // Logs value changes in realtime
+        };
+      })(this));
+    };
+
+  }
+
   function Graph(title, target, streamsparams, feed, history_params, type)
   {
     var self = this;
@@ -386,6 +419,7 @@ function Tempmonitor(feedelement){
   {
     $.when.apply(this, this.getData()).done( ( function(self) {
       return function () {
+      	console.log("Called");
         //console.log(self.graphdata);
         
         markers = self.markers;
