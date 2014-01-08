@@ -467,6 +467,8 @@ function Tempmonitor(feedelement){
             showRangeSelector: true,
             rangeSelectorPlotFillColor: "",
             connectSeparatedPoints: true,
+            rollPeriod: 1,
+            showRoller: true,
             underlayCallback: function(canvas, area, g) {
               canvas.fillStyle = "rgba(255, 30, 0, 0.5)";
 
