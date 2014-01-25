@@ -1,27 +1,22 @@
 
 {% extends "base.html" %}
 
-{% block title %}Starter Template{% endblock %}
+{% block title %}HomeStatus @ CZERU{% endblock %}
 
 {% block body %}
-      <div class="tempmonitors">
-        <h1>Monitors</h1>
-        <div id="tempmonitors"></div>
-      </div>
-
       <div class="tempmonitors" id="detailedgraphs">
-        <h1>Graphs</h1>
+        <h1>Detailed Graphs</h1>
       </div>
 
       <hr>
-
+      
       <footer>
         <p>&copy; TM 2013</p>
       </footer>
 {% endblock %}
 
 {% block js %}
-  {% assets "index_js" %}
+  {% assets "tempdetails_js" %}
       <script type="text/javascript" src="{{ ASSET_URL }}"></script>
   {% endassets %}
 {% endblock %}

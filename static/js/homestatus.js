@@ -255,7 +255,7 @@ function Tempmonitor(feedelement){
           labels.push("Toggle");
         }
 
-        Morris.Line({
+        new Morris.Line({
           element: self.target,
           data: data,
           xkey: 'y',
@@ -382,42 +382,64 @@ function Tempmonitor(feedelement){
 
   }
 
+
+
+  Graph.prototype.getDataPreprocesses = function()
+  {
+    deferred_calls = [];
+
+    durlist =  [{start: moment('2013-07-01T18:32:40').subtract('hours', 48).format(), end: moment('2013-07-01T22:45:10').format(), interval: 30, limit: 1000, interval_type: 'discrete'}];
+
+durlist = this.history_params
+
+    var dfd = $.ajax({
+      type: 'GET',
+      dataType: "json",
+      url: "/getdata",
+      data: { "streams": JSON.stringify(streams),
+              "dlist": JSON.stringify(durlist) },
+      success: ( function(self) { 
+          return function( data ) {
+            //alert("Success Yeah");
+            self.graphdata = data;
+          };
+        })(this)
+
+    });
+
+    deferred_calls.push(dfd.promise());
+    return deferred_calls;
+  }
+
+
    Graph.prototype.getAllDataGenSlidingGraphDygraphNew = function()
   {
-    $.when.apply(this, this.getData()).done( ( function(self) {
+    $.when.apply(this, this.getDataPreprocesses()).done( ( function(self) {
       return function () {
         //console.log(self.graphdata);
         
-        markers = self.markers;
-        labels = self.labels;
+        markers = self.graphdata.markers;
+        labels = self.graphdata.labels;
 
-        if(self.toggle) {
-          markers.push("tt");
-          labels.push("Toggle");
-        }
+        //console.log(markers)
 
         $("#"+self.target).append("<div class=\"noroll\" id=\"slidingDygraph_"+self.target+"\"></div>");
         
         data = [];
 
-        for (di in self.graphdata) 
+        for (di in self.graphdata.organized_data) 
         {
-          item = [ new Date(self.graphdata[di].y.substring(0, 20)+"000000Z") ];
+          item = [ new Date(self.graphdata.organized_data[di][0].substring(0, 19)+".000000Z") ];
           for(t in markers)
           {
-            if(self.graphdata[di][markers[t]] !== undefined)
-              item.push(parseFloat(self.graphdata[di][markers[t]]));
+            index = parseInt(t) + 1;
+            if(self.graphdata.organized_data[di][index] != "null")
+              item.push(parseFloat(self.graphdata.organized_data[di][index]));
             else
               item.push(null);
           }
           data.push(item);
         };
-
-        //console.log(data);
-
-        data.sort( function compareFunction(a, b){
-          return a[0] - b[0];
-        });
 
         //console.log(data);
 
@@ -443,18 +465,18 @@ function Tempmonitor(feedelement){
                 canvas.fillRect(canvas_left_x, area.y, canvas_width, area.h);
               }
 
-              console.log(self.toggledata);
+              //console.log(self.graphdata.toggle);
 
-              for (zi in self.toggledata){
-                if(self.toggledata[zi].length == 2)
-                  highlight_period(new Date(self.toggledata[zi][0]), new Date(self.toggledata[zi][1]));
+              for (zi in self.graphdata.toggle){
+                if(self.graphdata.toggle[zi].length == 2)
+                  highlight_period(new Date(self.graphdata.toggle[zi][0]), new Date(self.graphdata.toggle[zi][1]));
               }
             }
           }
         );
 
         /* Some stats */
-        $("#"+self.target).append("<p class=\"stats\"> On : "+self.nbH+" | Off : "+self.nbL+" | % On : "+(self.nbH*100/(self.nbH+self.nbL))+"</p>");
+        $("#"+self.target).append("<p class=\"stats\"> On : "+self.graphdata.nbH+" | Off : "+self.graphdata.nbL+" | % On : "+(self.graphdata.nbH*100/(self.graphdata.nbH+self.graphdata.nbL))+"</p>");
       }
     })(this));
 
