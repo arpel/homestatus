@@ -10,6 +10,9 @@
 
     <!-- Le styles -->
     <link href="css/bootstrap.css" rel="stylesheet">
+
+    <link rel="stylesheet" type="text/css" href="css/daterangepicker-bs2.css" />
+
     <style type="text/css">
       body {
         padding-top: 60px;
@@ -111,13 +114,13 @@ svg {
           <div class="nav-collapse collapse">
             <ul class="nav">
               <li><a href="index.html">Home</a></li>
-              <li class="active"><a href="Teleinfo.html">EDF TeleInfo</a></li>
+              <li><a href="Teleinfo.html">EDF TeleInfo</a></li>
 
-              <li class="dropdown">
+              <li class="dropdown active">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown">Chauffage <b class="caret"></b></a>
                 <ul class="dropdown-menu">
                   <li><a href="TempDetailsNew.html">Details - New version</a></li>
-                  <li><a href="TempDetailsHistory.html">History</a></li>
+                  <li class="active"><a href="TempDetailsHistory.html">History</a></li>
                   <li><a href="TempDetails.html">Old Version</a></li>
                 </ul>
               </li>
@@ -148,19 +151,32 @@ svg {
 
     <div class="container">
 
-      <div class="tempmonitors">
-        <h1>Monitors</h1>
-        <div id="tempmonitors"></div>
+      <div class="form-group">
+        <label for="datepicker">Graph dates:</label>
+        <div class="controls">
+          <div class="input-group" id="datepick">
+            <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text" name="datepicker" id="datepicker">
+          </div>
+        </div>
+      </div>
+    
+      <div class="tempmonitors" id="detailedgraphs">
+        <h1>History Graphs</h1>
       </div>
 
-      <div class="tempmonitors" id="detailedgraphs">
-        <h1>Detailed Graphs</h1>
+      <div class="form-group">
+        <label for="datepicker2">Graph dates:</label>
+        <div class="controls">
+          <div class="input-group" id="datepick">
+            <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text" name="datepicker2" id="datepicker2">
+          </div>
+        </div>
       </div>
 
       <hr>
       
       <footer>
-        <p>&copy; TM 2013/2014</p>
+        <p>&copy; TM 2013-2014</p>
       </footer>
 
     </div> <!-- /container -->
@@ -172,17 +188,18 @@ svg {
     <script src="js/bootstrap.min.js"></script>
     <script src="http://d23cj0cdvyoxg0.cloudfront.net/xivelyjs-1.0.4.min.js"></script>
 
-    
+    <!--
     <script type="text/javascript" src="js/jquery.easy-pie-chart.js"></script>
 
     <script type="text/javascript" src="js/raphael-min.js"></script>
     <script type="text/javascript" src="js/morris.min.js"></script>
-
-    <script type="text/javascript" src="js/moment.min.js"></script>
+-->
+    <script type="text/javascript" src="js/moment_270.min.js"></script>
 
     <script src="js/dygraph-combined.js"></script>
-
     <script src="js/homestatus.js"></script>
+
+    <script type="text/javascript" src="js/daterangepicker.js"></script>
 
 <script type="text/javascript">
 
@@ -190,53 +207,86 @@ $(document).ready(function() {
 
   SetupMoment();
 
+  /*$('#daterange').daterangepicker();*/
+/*
+$('#datepicker').daterangepicker(
+    {
+      startDate: moment(),
+      maxDate: moment(),
+      singleDatePicker: true
+    },
+
+    function(start, end) {
+        //$('#datepick span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
+
+    }
+);
+*/
   xively.setKey( "bI-PWNeyFPrHnJOq7tclJGLVjDiSAKxOSlRJNVVYMTBnbz0g" );
 
   var containers = "tempholder_";
 
-  var feedtable = [ { feed: "1384112203", datastream: "Index_HC", title: "Index HC",    minmax: [1792900, 1892900],  greenzone: [1792900, 1892900]},
-                    { feed: "1384112203", datastream: "Index_HP", title: "Index HP",    minmax: [3833995, 3933995], greenzone: [3833995, 3933995]},
-                    { feed: "1384112203", datastream: "Papp", title: "Puissance",       minmax: [0, 8000],  greenzone: [0, 1000]}];
+  var feedtable = [ { feed: "97289", datastream: "1", title: "Thermostat",    minmax: [10, 30],  greenzone: [15, 25]},
+                    { feed: "97289", datastream: "3", title: "Extérieur",     minmax: [-10, 40], greenzone: [10, 25]},
+                    { feed: "97289", datastream: "9", title: "Salon",         minmax: [10, 30],  greenzone: [15, 25]},
+                    { feed: "97289", datastream: "8", title: "Chambre",       minmax: [10, 30],  greenzone: [15, 25]},
+                    { feed: "97289", datastream: "6", title: "Chaudière IN",  minmax: [15, 85],  greenzone: [20, 55]},
+                    { feed: "97289", datastream: "5", title: "Chaudière OUT", minmax: [15, 85],  greenzone: [20, 55]}];
 
-  /* Generate all Temp monitors */
-  for(var i = 0; i < feedtable.length; i++){
-    feedtable[i].container = containers+i;
-
-    $("#tempmonitors").append("<div class=\"tempmonitor "+feedtable[i].container+"\"><p>"+feedtable[i].title+"</p><div class=\"tempgauge\" data-percent=\"0\"><span></span></div><p id=\"at\">TEST</p></div>");
-
-    feedtable[i].masterelement =  $("."+feedtable[i].container);
-    feedtable[i].element =  $(".tempgauge", feedtable[i].masterelement);
-
-    feedtable[i].monitor = new Tempmonitor(feedtable[i]);
-    feedtable[i].monitor.createPie();
-    feedtable[i].monitor.cosmOneTime();
-    feedtable[i].monitor.cosmRealTime();
-  }
-
+  
   /* Generate all detailled sliding graphs */
 
-  streams = [ { stream: "Papp", marker: 'p', label: 'Papp'}];
-
-/*  var gen5 = new Graph("Températures chaudière - 6h",'graph_intemp5', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 30, limit: 1000});
-  gen5.getAllData();
-*/
-
-var slide1 = new Graph("Puissance Instantanee - 24h", 'chart', streams, feedtable[0].feed,
-    [ {start: moment().subtract('hours', 24).format(), duration: '6hours', interval: 30, limit: 800},
-      {start: moment().subtract('hours', 18).format(), duration: '6hours', interval: 30, limit: 800},
-      {start: moment().subtract('hours', 12).format(), duration: '6hours', interval: 30, limit: 800},
-      {start: moment().subtract('hours',  6).format(), duration: '6hours', interval: 30, limit: 800} ]);
-
-slide1.getAllDataGenSlidingGraphDygraphNew();
-
-
- streams = [ { stream: 1, marker: 't', label: 'Thermostat'},
+  streams = [ { stream: 5, marker: 'o', label: 'Out', toggle: true}, 
+              { stream: 6, marker: 'i', label: 'In'},
+              { stream: 1, marker: 't', label: 'Thermostat'},
               { stream: 3, marker: 'e', label: 'Exterieur'}];
 
-//var slide2 = new Graph("Températures intérieur / extérieur - 3mois",'chart2', streams, feedtable[0].feed, 
-//  [{start: moment().subtract('days', 88).format(), interval: 21600, limit : 500, interval_type: 'discrete'}]);
+  /* With single daterangepicker the end value egals the start one */
+  function GenerateDetailsGraphfromPickedDate(datestart, end){
+    /* Variable get affected by time computation */
 
-//slide2.getAllDataGenSlidingGraphDygraph();
+    var slide1 = new Graph("Chauffage - 24h", 'chart', streams, feedtable[0].feed,
+        [ {start: datestart.subtract('hours', 6).format(), duration: '6hours', interval: 30, limit: 800},
+          {start: datestart.subtract('hours', 6).format(), duration: '6hours', interval: 30, limit: 800},
+          {start: datestart.subtract('hours', 6).format(), duration: '6hours', interval: 30, limit: 800},
+          {start: datestart.subtract('hours', 6).format(), duration: '6hours', interval: 30, limit: 800} ],
+          10);
+
+    slide1.getAllDataGenSlidingGraphDygraphNew();
+  };
+
+  $('#datepicker').daterangepicker(
+      {
+        startDate: moment(),
+        maxDate: moment(),
+        singleDatePicker: true
+      },
+
+      GenerateDetailsGraphfromPickedDate
+  );
+
+/* 2nd Graph */
+
+   streams2 = [ { stream: 1, marker: 't', label: 'Thermostat'},
+              { stream: 3, marker: 'e', label: 'Exterieur'}];
+
+  function GenerateGraphfromPickedDate(datestart, end){
+
+    var slide2 = new Graph("Températures intérieur / extérieur - 3mois",'chart2', streams2, feedtable[0].feed, 
+      [{start: datestart.subtract('days', 88).format(), duration: '88days', interval: 21600, limit : 500, interval_type: 'discrete'}]);
+
+    slide2.getAllDataGenSlidingGraphDygraph();
+  };
+
+  $('#datepicker2').daterangepicker(
+      {
+        startDate: moment(),
+        maxDate: moment(),
+        singleDatePicker: true
+      },
+
+      GenerateGraphfromPickedDate
+  );
 
 });
 

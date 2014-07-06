@@ -147,7 +147,13 @@ function Tempmonitor(feedelement){
     self.labels = [];
 
     self.target = target;
-    $("#detailedgraphs").append("<div><h3>"+title+"</h3><div id=\""+target+"\"></div></div><hr>");
+
+    if ($("#master_"+self.target).length)
+    {
+      $("#master_"+self.target).remove();
+    }
+
+    $("#detailedgraphs").append("<div id=\"master_"+target+"\"><h3>"+title+"</h3><div id=\""+target+"\"></div></div><hr>");
 
     self.toggle = false;
     self.nbH = 0;
@@ -420,8 +426,12 @@ function Tempmonitor(feedelement){
     $.when.apply(this, this.getData()).done( ( function(self) {
       return function () {
       	console.log("Called");
-        //console.log(self.graphdata);
-        
+        /*console.log(self.graphdata);
+        for (di in self.graphdata) 
+        {
+          console.log(di);
+        }
+        */
         markers = self.markers;
         labels = self.labels;
 
