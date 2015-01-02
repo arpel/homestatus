@@ -169,6 +169,18 @@ function Tempmonitor(feedelement){
     }
   }
 
+  Graph.prototype.checkHeating = function(previous, current, wasHeating)
+  {
+    hysteresis_high = 0.1;
+    hysteresis_low = 0.20;
+
+    if ((current > (previous - hysteresis_low) && wasHeating) || (current > previous + hysteresis_high)){
+      return 1;
+    } else {
+      return 0;
+    }
+  }
+
   Graph.prototype.getData = function()
   {
     deferred_calls = [];
@@ -218,7 +230,7 @@ function Tempmonitor(feedelement){
                   if(toggle)
                   {
                     current = parseFloat(data.datapoints[i].value);
-                    if(current > (previous + 0.1)) { self.graphdata["tt"].push({x: when, y: 10.0}); nbH++; }
+                    if( self.checkHeating(previous, current, 0) ) { self.graphdata["tt"].push({x: when, y: 10.0}); nbH++; }
                     else { self.graphdata["tt"].push({x: when, y: 0.0}); nbL++; }
                     previous = current;
                   }
@@ -233,7 +245,7 @@ function Tempmonitor(feedelement){
                   {
                     current = parseFloat(data.datapoints[i].value);
                     if(self.graphtype == 10){
-                      if(current > (previous + 0.15)) { 
+                      if( self.checkHeating(previous, current, self.heating) ) { 
                         if(self.heating == false){
                           self.toggledata.push([data.datapoints[i].at]);
                           self.heating = true;
@@ -248,7 +260,7 @@ function Tempmonitor(feedelement){
                       }
                     }
                     else {
-                      if(current > (previous + 0.15)) { self.graphdata[data.datapoints[i].at]["tt"] = 10; nbH++; }
+                      if( self.checkHeating(previous, current, 0) ) { self.graphdata[data.datapoints[i].at]["tt"] = 10; nbH++; }
                       else { self.graphdata[data.datapoints[i].at]["tt"] = 0; nbL++; }
                     }
                     previous = current;
