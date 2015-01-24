@@ -1,5 +1,5 @@
 function SetupMoment(){
-	moment.lang('fr', {
+	moment.locale('fr', {
     months : "Janvier_Février_Mars_Avril_Mai_Juin_Juillet_Aout_Septembre_Octobre_Novembre_Décembre".split("_"),
     monthsShort : "Jan_Fev_Mar_Avr_Mai_Juin_Juil_Aou_Sep_Oct_Nov_Dec".split("_"),
     weekdays : "Dimanche_Lundi_Mardi_Mercredi_Jeudi_Vendredi_Samedi".split("_"),
@@ -44,7 +44,7 @@ function SetupMoment(){
     }
   });
 
-  moment.lang('fr');
+  moment.locale('fr');
 }
 
 function Tempmonitor(feedelement){
@@ -133,9 +133,13 @@ function Tempmonitor(feedelement){
 
   }
 
-  function Graph(title, target, streamsparams, feed, history_params, type)
+  function Graph(title, target, streamsparams, feed, history_params, type, target_div, skipinterval)
   {
     var self = this;
+
+    target_div = typeof target_div !== 'undefined' ? target_div : "#detailedgraphs";
+    self.skipinterval = typeof skipinterval !== 'undefined' ? skipinterval : 1;
+    self.skipthreshold = 15000*self.skipinterval;
 
     self.graphdata = [];
     
@@ -153,7 +157,8 @@ function Tempmonitor(feedelement){
       $("#master_"+self.target).remove();
     }
 
-    $("#detailedgraphs").append("<div id=\"master_"+target+"\"><h3>"+title+"</h3><div id=\""+target+"\"></div></div><hr>");
+    //$("#detailedgraphs").append("<div id=\"master_"+target+"\"><h3>"+title+"</h3><div id=\""+target+"\"></div></div><hr>");
+    $(target_div).append("<div id=\"master_"+target+"\"><h3>"+title+"</h3><div id=\""+target+"\"></div></div><hr>");
 
     self.toggle = false;
     self.nbH = 0;
@@ -313,6 +318,64 @@ function Tempmonitor(feedelement){
           ykeys: markers,
           labels: labels,
           ymin : 'auto'
+        });
+      }
+    })(this));
+  }
+
+
+  Graph.prototype.getAllDataBar = function()
+  {
+    $.when.apply(this, this.getData()).done( ( function(self) {
+      return function () {
+        //console.log(self.graphdata);
+
+        data = [];
+        after_first = false;
+        
+        skip_index = 0;
+        previous_k = 0;
+
+        for ( k in self.graphdata ){
+          if(skip_index++ % self.skipinterval != 0){
+            continue;
+          }
+
+          if (after_first){
+            d = []
+            out_of_range = false;
+
+            for(m in self.markers){              
+              d[self.markers[m]] = self.graphdata[k][self.markers[m]] - self.graphdata[previous_k][self.markers[m]];
+              
+              if(d[self.markers[m]] > self.skipthreshold){
+                out_of_range = true;
+              }
+            }
+            
+            d["y"] = moment(self.graphdata[k]["y"]).format("DD / MM");
+
+            if(!out_of_range){
+              data.push(d);
+            } else {
+              console.log("Out of range value");
+            }
+          } else {
+            after_first = true;
+          }
+          previous_k = k;
+        }
+        //console.log(data);
+        markers = self.markers;
+        labels = self.labels;
+
+        Morris.Bar({
+          element: self.target,
+          data: data,
+          xkey: 'y',
+          ykeys: markers,
+          labels: labels,
+          ymin : 0//'auto'
         });
       }
     })(this));

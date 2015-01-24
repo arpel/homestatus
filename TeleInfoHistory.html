@@ -77,6 +77,11 @@ svg {
   min-height: 100px;
 }
 
+.morris-hover{position:absolute;z-index:1000;}
+.morris-hover.morris-default-style{border-radius:10px;padding:6px;color:#666;background:rgba(255, 255, 255, 0.8);border:solid 2px rgba(230, 230, 230, 0.8);font-family:sans-serif;font-size:12px;text-align:center;}
+.morris-hover.morris-default-style .morris-hover-row-label{font-weight:bold;margin:0.25em 0;}
+.morris-hover.morris-default-style .morris-hover-point{white-space:nowrap;margin:0.1em 0;}
+
     </style>
 
     <link href="css/nv.d3.css" rel="stylesheet" type="text/css">
@@ -99,7 +104,7 @@ svg {
 
   <body>
 
-    <div class="navbar navbar-inverse navbar-fixed-top">
+   <div class="navbar navbar-inverse navbar-fixed-top">
       <div class="navbar-inner">
         <div class="container">
           <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
@@ -107,12 +112,12 @@ svg {
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </a>
-          <a class="brand" href="#">HomeStatus</a>
+          <a class="brand" href="index.html">HomeStatus</a>
           <div class="nav-collapse collapse">
             <ul class="nav">
-              <li class="active"><a href="#">Home</a></li>
+              <li><a href="index.html">Home</a></li>
               <li><a href="Teleinfo.html">EDF TeleInfo</a></li>
-              <li><a href="TeleInfoHistory.html">EDF TeleInfo History</a></li>
+              <li class="active"><a href="TeleInfoHistory.html">EDF TeleInfo History</a></li>
 
               <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown">Chauffage <b class="caret"></b></a>
@@ -155,13 +160,17 @@ svg {
       </div>
 
       <div class="tempmonitors" id="detailedgraphs">
-        <h1>Graphs</h1>
+        <h1>Detailed Graphs</h1>
+      </div>
+
+      <div class="tempmonitors" id="history">
+        <h1>History</h1>
       </div>
 
       <hr>
-
+      
       <footer>
-        <p>&copy; TM 2013-2014</p>
+        <p>&copy; TM 2013/2015</p>
       </footer>
 
     </div> <!-- /container -->
@@ -172,15 +181,17 @@ svg {
     <script src="http://code.jquery.com/jquery-latest.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="http://d23cj0cdvyoxg0.cloudfront.net/xivelyjs-1.0.4.min.js"></script>
+
+    
     <script type="text/javascript" src="js/jquery.easy-pie-chart.js"></script>
 
     <script type="text/javascript" src="js/raphael-min.js"></script>
     <script type="text/javascript" src="js/morris.min.js"></script>
 
     <script type="text/javascript" src="js/moment.min.js"></script>
-<!--
+
     <script src="js/dygraph-combined.js"></script>
- -->
+
     <script src="js/homestatus.js"></script>
 
 <script type="text/javascript">
@@ -193,12 +204,9 @@ $(document).ready(function() {
 
   var containers = "tempholder_";
 
-  var feedtable = [ { feed: "97289", datastream: "1", title: "Thermostat",    minmax: [10, 30],  greenzone: [15, 25]},
-                    { feed: "97289", datastream: "3", title: "Extérieur",     minmax: [-10, 40], greenzone: [10, 25]},
-                    { feed: "97289", datastream: "9", title: "Salon",         minmax: [10, 30],  greenzone: [15, 25]},
-                    { feed: "97289", datastream: "8", title: "Chambre",       minmax: [10, 30],  greenzone: [15, 25]},
-                    { feed: "97289", datastream: "6", title: "Chaudière IN",  minmax: [15, 85],  greenzone: [20, 55]},
-                    { feed: "97289", datastream: "5", title: "Chaudière OUT", minmax: [15, 85],  greenzone: [20, 55]}];
+  var feedtable = [ { feed: "1384112203", datastream: "Index_HC", title: "Index HC",    minmax: [1792900, 1892900],  greenzone: [1792900, 1892900]},
+                    { feed: "1384112203", datastream: "Index_HP", title: "Index HP",    minmax: [3833995, 3933995], greenzone: [3833995, 3933995]},
+                    { feed: "1384112203", datastream: "Papp", title: "Puissance",       minmax: [0, 8000],  greenzone: [0, 1000]}];
 
   /* Generate all Temp monitors */
   for(var i = 0; i < feedtable.length; i++){
@@ -215,32 +223,63 @@ $(document).ready(function() {
     feedtable[i].monitor.cosmRealTime();
   }
 
-  streams = [ { stream: 1, marker: 't', label: 'Thermostat'}, 
-              { stream: 8, marker: 'c', label: 'Chambre'},
-              { stream: 9, marker: 's', label: 'Salon'}];
+  /* Generate all detailled sliding graphs */
 
-  var gen1 = new Graph("Températures intérieures - 6h", 'graph_intemp1', streams, feedtable[0].feed, [{start: moment().subtract('hours', 6).format(), interval: 300, limit: 300, interval_type: 'discrete'}]);
-  gen1.getAllData();
+  streams = [ { stream: "Papp", marker: 'p', label: 'Papp'}];
 
-  streams = [ { stream: 5, marker: 'o', label: 'Out'}, 
-              { stream: 6, marker: 'i', label: 'In'}];
+/*  var gen5 = new Graph("Températures chaudière - 6h",'graph_intemp5', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 30, limit: 1000});
+  gen5.getAllData();
+*/
 
-  //var gen2 = new Graph("Températures chaudière - 6h",'graph_intemp2', streams, feedtable[0].feed, [{start: moment().subtract('hours', 6).format(), interval: 300, limit: 300, interval_type: 'discrete'}]);
-  //gen2.getAllData();
+var slide1 = new Graph("Puissance Instantanee - 24h", 'chart', streams, feedtable[0].feed,
+    [ {start: moment().subtract('hours', 24).format(), duration: '6hours', interval: 30, limit: 800},
+      {start: moment().subtract('hours', 18).format(), duration: '6hours', interval: 30, limit: 800},
+      {start: moment().subtract('hours', 12).format(), duration: '6hours', interval: 30, limit: 800},
+      {start: moment().subtract('hours',  6).format(), duration: '6hours', interval: 30, limit: 800} ]);
+
+slide1.getAllDataGenSlidingGraphDygraphNew();
 
 
-  streams = [ { stream: 1, marker: 't', label: 'Thermostat'},
+ streams = [ { stream: 1, marker: 't', label: 'Thermostat'},
               { stream: 3, marker: 'e', label: 'Exterieur'}];
 
-  var gen3 = new Graph("Températures intérieur / extérieur - 48h",'graph_intemp3', streams, feedtable[0].feed, [{start: moment().subtract('hours', 48).format(), interval: 2400, limit: 300, interval_type: 'discrete'}]);
-  gen3.getAllData();
+//var slide2 = new Graph("Températures intérieur / extérieur - 3mois",'chart2', streams, feedtable[0].feed, 
+//  [{start: moment().subtract('days', 88).format(), interval: 21600, limit : 500, interval_type: 'discrete'}]);
 
-  streams = [ { stream: 5, marker: 'o', label: 'Out', toggle: true}, 
-              { stream: 6, marker: 'i', label: 'In'}];
+//slide2.getAllDataGenSlidingGraphDygraph();
 
-  //var gen4 = new Graph("Températures chaudière - 24h",'graph_intemp4', streams, feedtable[0].feed, [{start: moment().subtract('hours', 24).format(), interval: 300, limit: 1000, interval_type: 'discrete'}]);
-  //gen4.getAllData();
+streams = [ { stream: "Index_HC", marker: 'c', label: 'HC'},
+            { stream: "Index_HP", marker: 'p', label: 'HP'}];
 
+// Current Week
+//var bar1 = new Graph("Consommation", 'bar1', streams, feedtable[0].feed, 
+//  [{start: moment().subtract('days', 15).format(), interval: 86400, limit : 100, interval_type: 'discrete'}],
+//  0, "#history");
+var bar1 = new Graph("Current Week", 'bar1', streams, feedtable[0].feed, 
+  [{start: moment().startOf('week').subtract(1, 'days').format(), interval: 86400, limit : 100, interval_type: 'discrete'}],
+  0, "#history");
+
+bar1.getAllDataBar();
+
+// Current Month
+var bar2 = new Graph("Current Month", 'bar2', streams, feedtable[0].feed, 
+  [{start: moment().startOf('month').subtract(1, 'days').format(), interval: 86400, limit : 100, interval_type: 'discrete'}],
+  0, "#history");
+
+bar2.getAllDataBar();
+
+// Current Year
+var bar3 = new Graph("Current Year", 'bar3', streams, feedtable[0].feed, 
+  [{start: moment().startOf('year').startOf('week').format(), interval: 86400, limit : 400, interval_type: 'discrete'}],
+  0, "#history", 7);
+
+bar3.getAllDataBar();
+
+var bar4 = new Graph("Last Year", 'bar4', streams, feedtable[0].feed, 
+  [{start: moment().startOf('year').subtract(12, 'month').startOf('week').format(), end: moment().startOf('year').format(), interval: 86400, limit : 400, interval_type: 'discrete'}],
+  0, "#history", 7);
+
+bar4.getAllDataBar();
 
 });
 
