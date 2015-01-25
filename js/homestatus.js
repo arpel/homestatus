@@ -317,7 +317,10 @@ function Tempmonitor(feedelement){
           xkey: 'y',
           ykeys: markers,
           labels: labels,
-          ymin : 'auto'
+          hideHover: 'auto',
+          ymin : 'auto',
+          //yLabelFormat: function(y){ return Math.round(y);}
+          yLabelFormat: function(y){ return +y.toFixed(1); }
         });
       }
     })(this));
@@ -375,6 +378,7 @@ function Tempmonitor(feedelement){
           xkey: 'y',
           ykeys: markers,
           labels: labels,
+          hideHover: 'auto',
           ymin : 0//'auto'
         });
       }
