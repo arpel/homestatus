@@ -1,0 +1,204 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>HomeStatus @ CZERU</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/homestatus.css" rel="stylesheet">
+
+    <link href="css/nv.d3.css" rel="stylesheet" type="text/css">
+
+    <link href="css/bootstrap-theme.min.css" rel="stylesheet">
+    
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+<link rel="stylesheet"type="text/css" href="css/jquery.easy-pie-chart.css">
+    <!-- Fav and touch icons -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../assets/ico/apple-touch-icon-114-precomposed.png">
+      <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../assets/ico/apple-touch-icon-72-precomposed.png">
+                    <link rel="apple-touch-icon-precomposed" href="../assets/ico/apple-touch-icon-57-precomposed.png">
+                                   <link rel="shortcut icon" href="../assets/ico/favicon.png">
+  </head>
+
+  <body>
+
+   <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container-fluid">
+          <!-- Brand and toggle get grouped for better mobile display -->
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="index.html">HomeStatus</a>
+          </div>
+
+          <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav">
+              <li><a href="index.html">Home</a></li>
+              <li><a href="Teleinfo.html">EDF TeleInfo</a></li>
+              <li class="active"><a href="TeleInfoHistory.html">EDF TeleInfo History</a></li>
+
+              <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown">Chauffage <b class="caret"></b></a>
+                <ul class="dropdown-menu" role="menu">
+                  <li><a href="TempDetailsNew.html">Details - New version</a></li>
+                  <li><a href="TempDetailsHistory.html">History</a></li>
+                  <li><a href="TempDetails.html">Old Version</a></li>
+                </ul>
+              </li>
+
+              <li><a href="#contact">Contact</a></li>
+          </div><!--/.nav-collapse -->
+        </div><!-- /.container-fluid -->
+    </nav>
+
+    <div class="container">
+
+      <div class="tempmonitors">
+        <h1>Monitors</h1>
+        <div id="tempmonitors"></div>
+      </div>
+
+      <div class="tempmonitors" id="detailedgraphs">
+        <h1>Detailed Graphs</h1>
+      </div>
+
+      <div class="tempmonitors" id="history">
+        <h1>History</h1>
+      </div>
+
+      <hr>
+      
+      <footer>
+        <p>&copy; TM 2013/2015</p>
+      </footer>
+
+    </div> <!-- /container -->
+
+    <!-- Le javascript
+    ================================================== -->  
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="http://d23cj0cdvyoxg0.cloudfront.net/xivelyjs-1.0.4.min.js"></script>
+
+    
+    <script type="text/javascript" src="js/jquery.easy-pie-chart.js"></script>
+
+    <script type="text/javascript" src="js/raphael-min.js"></script>
+    <script type="text/javascript" src="js/morris.min.js"></script>
+
+    <script type="text/javascript" src="js/moment.min.js"></script>
+
+    <script src="js/dygraph-combined.js"></script>
+
+    <script src="js/homestatus.js"></script>
+
+<script type="text/javascript">
+
+$(document).ready(function() {
+
+  SetupMoment();
+
+  xively.setKey( "McY2DjsnzDOFvpW2ZujNHY4zwaAygLuanNwqIeKVPB6En5ED" );
+
+  var containers = "tempholder_";
+
+  var feedtable = [ { feed: "549635376", datastream: "HCHC", title: "Index HC",    minmax: [1792900, 1892900],  greenzone: [1792900, 1892900]},
+                    { feed: "549635376", datastream: "HCHP", title: "Index HP",    minmax: [3833995, 3933995], greenzone: [3833995, 3933995]},
+                    { feed: "549635376", datastream: "Papp", title: "Puissance",       minmax: [0, 8000],  greenzone: [0, 1000]}];
+
+  /* Generate all Temp monitors */
+  for(var i = 0; i < feedtable.length; i++){
+    feedtable[i].container = containers+i;
+
+    $("#tempmonitors").append("<div class=\"tempmonitor "+feedtable[i].container+"\"><p>"+feedtable[i].title+"</p><div class=\"tempgauge\" data-percent=\"0\"><span></span></div><p id=\"at\">TEST</p></div>");
+
+    feedtable[i].masterelement =  $("."+feedtable[i].container);
+    feedtable[i].element =  $(".tempgauge", feedtable[i].masterelement);
+
+    feedtable[i].monitor = new Tempmonitor(feedtable[i]);
+    feedtable[i].monitor.createPie();
+    feedtable[i].monitor.cosmOneTime();
+    feedtable[i].monitor.cosmRealTime();
+  }
+
+  /* Generate all detailled sliding graphs */
+
+  streams = [ { stream: "Papp", marker: 'p', label: 'Papp'}];
+
+/*  var gen5 = new Graph("Températures chaudière - 6h",'graph_intemp5', streams, feedtable[0].feed, {start: moment().subtract('hours', 6).format(), interval: 30, limit: 1000});
+  gen5.getAllData();
+*/
+
+var slide1 = new Graph("Puissance Instantanee - 24h", 'chart', streams, feedtable[0].feed,
+    [ {start: moment().subtract('hours', 24).format(), duration: '6hours', interval: 30, limit: 800},
+      {start: moment().subtract('hours', 18).format(), duration: '6hours', interval: 30, limit: 800},
+      {start: moment().subtract('hours', 12).format(), duration: '6hours', interval: 30, limit: 800},
+      {start: moment().subtract('hours',  6).format(), duration: '6hours', interval: 30, limit: 800} ]);
+
+slide1.getAllDataGenSlidingGraphDygraphNew();
+
+
+ streams = [ { stream: 1, marker: 't', label: 'Thermostat'},
+              { stream: 3, marker: 'e', label: 'Exterieur'}];
+
+//var slide2 = new Graph("Températures intérieur / extérieur - 3mois",'chart2', streams, feedtable[0].feed, 
+//  [{start: moment().subtract('days', 88).format(), interval: 21600, limit : 500, interval_type: 'discrete'}]);
+
+//slide2.getAllDataGenSlidingGraphDygraph();
+
+streams = [ { stream: "HCHC", marker: 'c', label: 'HC'},
+            { stream: "HCHP", marker: 'p', label: 'HP'}];
+
+// Current Week
+//var bar1 = new Graph("Consommation", 'bar1', streams, feedtable[0].feed, 
+//  [{start: moment().subtract('days', 15).format(), interval: 86400, limit : 100, interval_type: 'discrete'}],
+//  0, "#history");
+var bar1 = new Graph("Current Week", 'bar1', streams, feedtable[0].feed, 
+  [{start: moment().startOf('week').subtract(1, 'days').format(), interval: 86400, limit : 100, interval_type: 'discrete'}],
+  0, "#history", 1, 100000);
+
+bar1.getAllDataBar();
+
+// Current Month
+var bar2 = new Graph("Current Month", 'bar2', streams, feedtable[0].feed, 
+  [{start: moment().startOf('month').subtract(1, 'days').format(), interval: 86400, limit : 100, interval_type: 'discrete'}],
+  0, "#history", 1, 100000);
+
+bar2.getAllDataBar();
+
+// Current Year
+var bar3 = new Graph("Current Year", 'bar3', streams, feedtable[0].feed, 
+  [{start: moment().startOf('year').startOf('week').format(), interval: 86400, limit : 400, interval_type: 'discrete'}],
+  0, "#history", 7, 100000);
+
+bar3.getAllDataBar();
+
+var bar4 = new Graph("Last Year", 'bar4', streams, feedtable[0].feed, 
+  [{start: moment().startOf('year').subtract(8, 'month').format(), end: moment().startOf('year').format(), interval: 86400, limit : 400, interval_type: 'discrete'}],
+  0, "#history", 7, 100000);
+
+bar4.getAllDataBar();
+
+});
+
+</script>
+
+</body>
+</html>
+

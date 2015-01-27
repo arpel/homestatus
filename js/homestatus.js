@@ -133,13 +133,14 @@ function Tempmonitor(feedelement){
 
   }
 
-  function Graph(title, target, streamsparams, feed, history_params, type, target_div, skipinterval)
+  function Graph(title, target, streamsparams, feed, history_params, type, target_div, skipinterval, skipcoeff)
   {
     var self = this;
 
     target_div = typeof target_div !== 'undefined' ? target_div : "#detailedgraphs";
     self.skipinterval = typeof skipinterval !== 'undefined' ? skipinterval : 1;
-    self.skipthreshold = 15000*self.skipinterval;
+    self.skipcoeff = typeof skipcoeff !== 'undefined' ? skipcoeff : 15000;
+    self.skipthreshold = self.skipcoeff*self.skipinterval;
 
     self.graphdata = [];
     
@@ -362,6 +363,9 @@ function Tempmonitor(feedelement){
               data.push(d);
             } else {
               console.log("Out of range value");
+              console.log(d[self.markers[0]]);
+              console.log(d[self.markers[1]]);
+              console.log(self.skipthreshold);
             }
           } else {
             after_first = true;
