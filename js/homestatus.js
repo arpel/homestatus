@@ -496,6 +496,10 @@ function Tempmonitor(feedelement){
           ykeys: markers,
           labels: labels,
           hideHover: 'auto',
+          hoverCallback: function(index, options, content) {
+            cost = Math.round(options.data[index].c / 1000 * 0.095 + options.data[index].p / 1000 * 0.130);
+            return content+cost+"€";
+          },
           ymin : 0//'auto'
         });
       }
