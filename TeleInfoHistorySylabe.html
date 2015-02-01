@@ -151,7 +151,7 @@ var slide1 = new Graph("Puissance Instantanee - 24h", 'chart', streams, feedtabl
       {start: moment().subtract('hours', 12).format(), duration: '6hours', interval: 30, limit: 800},
       {start: moment().subtract('hours',  6).format(), duration: '6hours', interval: 30, limit: 800} ]);
 
-slide1.getAllDataGenSlidingGraphDygraphNew();
+//slide1.getAllDataGenSlidingGraphDygraphNew();
 
 
  streams = [ { stream: 1, marker: 't', label: 'Thermostat'},
@@ -173,27 +173,43 @@ var bar1 = new Graph("Current Week", 'bar1', streams, feedtable[0].feed,
   [{start: moment().startOf('week').subtract(1, 'days').format(), interval: 86400, limit : 100, interval_type: 'discrete'}],
   0, "#history", 1, 100000);
 
-bar1.getAllDataBar();
+//bar1.getAllDataBar();
 
 // Current Month
 var bar2 = new Graph("Current Month", 'bar2', streams, feedtable[0].feed, 
   [{start: moment().startOf('month').subtract(1, 'days').format(), interval: 86400, limit : 100, interval_type: 'discrete'}],
   0, "#history", 1, 100000);
 
-bar2.getAllDataBar();
+//bar2.getAllDataBar();
+//bar1.getAllDataBarRegisterGraph(bar2);
 
 // Current Year
 var bar3 = new Graph("Current Year", 'bar3', streams, feedtable[0].feed, 
   [{start: moment().startOf('year').startOf('week').format(), interval: 86400, limit : 400, interval_type: 'discrete'}],
   0, "#history", 7, 100000);
 
-bar3.getAllDataBar();
+//bar3.getAllDataBar();
+
+var justNow = moment();
 
 var bar4 = new Graph("Last Year", 'bar4', streams, feedtable[0].feed, 
-  [{start: moment().startOf('year').subtract(8, 'month').format(), end: moment().startOf('year').format(), interval: 86400, limit : 400, interval_type: 'discrete'}],
-  0, "#history", 7, 100000);
+  [ {start: justNow.subtract(6, 'month').format(), end: justNow.add(1, 'month').format(), interval: 86400, limit : 40, interval_type: 'discrete'},
+    {start: justNow.format(),                      end: justNow.add(1, 'month').format(), interval: 86400, limit : 40, interval_type: 'discrete'},
+    {start: justNow.format(),                      end: justNow.add(1, 'month').format(), interval: 86400, limit : 40, interval_type: 'discrete'},
+    {start: justNow.format(),                      end: justNow.add(1, 'month').format(), interval: 86400, limit : 40, interval_type: 'discrete'},
+    {start: justNow.format(),                      end: justNow.add(1, 'month').format(), interval: 86400, limit : 40, interval_type: 'discrete'},
+    {start: justNow.format(), interval: 86400, limit : 40, interval_type: 'discrete'} ],
+    0, "#history", 7, 100000);
 
-bar4.getAllDataBar();
+
+//bar4.getAllDataBar();
+
+
+bar4.getAllDataBarRegisterGraph(bar1);
+bar4.getAllDataBarRegisterGraph(bar2);
+bar4.getAllDataBarRegisterGraph(bar3);
+
+bar4.getAllDataBarGetDataAndCallAllGraphs();
 
 });
 

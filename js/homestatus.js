@@ -143,6 +143,8 @@ function Tempmonitor(feedelement){
     self.skipthreshold = self.skipcoeff*self.skipinterval;
 
     self.graphdata = [];
+
+    self.linkedGraphs = [];
     
     self.streams = streamsparams;
     self.feed = feed;
@@ -327,6 +329,117 @@ function Tempmonitor(feedelement){
     })(this));
   }
 
+
+  Graph.prototype.getAllDataBarRegisterGraph = function(othergraph){
+    this.linkedGraphs.push(othergraph);
+  }
+
+  Graph.prototype.getAllDataBarGetDataAndCallAllGraphs = function(){
+    // Retreive data
+    $.when.apply(this, this.getData()).done( ( function(self) {
+      return function () {
+        // Current Graph
+        self.generateDataBar();
+
+        //Other Graphs
+        for (k in self.linkedGraphs){
+          start = typeof self.linkedGraphs[k].history_params[0]["start"] !== 'undefined' ? moment(self.linkedGraphs[k].history_params[0]["start"]) : moment().subtract(2, 'year');
+          end = typeof self.linkedGraphs[k].history_params[0]["end"] !== 'undefined' ? moment(self.linkedGraphs[k].history_params[0]["end"]) : moment();
+
+          console.log("New Graph");
+
+          for (g in self.graphdata){
+            comparableG = moment(g);
+
+            if(comparableG >= start && comparableG <= end){
+              self.linkedGraphs[k].graphdata[g] = self.graphdata[g];
+              //console.log(self.linkedGraphs[k].graphdata[g]);
+              //self.linkedGraphs[k].labels.push(g);
+              // console.log("in");
+            }
+          }
+
+          //self.linkedGraphs[k].graphdata = self.graphdata;
+          self.linkedGraphs[k].markers = self.markers;
+          self.linkedGraphs[k].labels = self.labels;
+
+          console.log("History");
+          console.log(self.linkedGraphs[k].history_params);
+          console.log(start);
+          console.log(end);
+
+          self.linkedGraphs[k].generateDataBar();
+        }
+      }
+    })(this));
+  }
+
+  Graph.prototype.generateDataBar = function()
+  {
+    data = [];
+    after_first = false;
+    
+    skip_index = 0;
+    previous_k = 0;
+
+    for ( k in this.graphdata ){
+      if(skip_index++ % this.skipinterval != 0){
+        continue;
+      }
+
+      if (after_first){
+        d = []
+        out_of_range = false;
+
+        for(m in this.markers){              
+          d[this.markers[m]] = this.graphdata[k][this.markers[m]] - this.graphdata[previous_k][this.markers[m]];
+          
+          if(d[this.markers[m]] > this.skipthreshold){
+            out_of_range = true;
+          }
+        }
+        
+        d["y"] = moment(this.graphdata[k]["y"]).format("DD/MM/YY");
+
+        if(!out_of_range){
+          data.push(d);
+        } else {
+          console.log("Out of range value");
+          console.log(d[this.markers[0]]);
+          console.log(d[this.markers[1]]);
+          console.log(this.skipthreshold);
+        }
+      } else {
+        after_first = true;
+      }
+      previous_k = k;
+    }
+
+    //Let's sort the data
+    data.sort( function compareFunction(a, b){
+      aMillis = moment(a.y).milli;
+      bMillis = moment(b.y).milli;
+      return ((aMillis < bMillis) ? -1 : (aMillis > bMillis) ? 1 : 0);
+    });
+
+    //console.log(data);
+    markers = this.markers;
+    labels = this.labels;
+
+    Morris.Bar({
+      element: this.target,
+      data: data,
+      xkey: 'y',
+      ykeys: markers,
+      labels: labels,
+      hideHover: 'auto',
+      hoverCallback: function(index, options, content) {
+        cost = Math.round(options.data[index].c / 1000 * 0.095 + options.data[index].p / 1000 * 0.130);
+        return content+cost+"€";
+      },
+      ymin : 0//'auto'
+    });
+  }
 
   Graph.prototype.getAllDataBar = function()
   {
