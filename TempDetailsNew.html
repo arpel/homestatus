@@ -72,7 +72,7 @@
       <hr>
       
       <footer>
-        <p>&copy; TM 2013</p>
+        <p>&copy; TM 2013-2016</p>
       </footer>
 
     </div> <!-- /container -->
@@ -141,6 +141,21 @@ var slide2 = new Graph("Températures intérieur / extérieur - 3mois",'chart2',
   [{start: moment().subtract('days', 88).format(), interval: 21600, limit : 500, interval_type: 'discrete'}]);
 
 slide2.getAllDataGenSlidingGraphDygraph();
+
+
+// New
+  streams = [ { stream: 5, marker: 'o', label: 'Out', toggle: true}, 
+              { stream: 6, marker: 'i', label: 'In'},
+              { stream: 1, marker: 't', label: 'Thermostat'},
+              { stream: 3, marker: 'e', label: 'Exterieur'}];
+
+  var slide3 = new Graph("Températures intérieur / chaudière - 48h", 'chart3', streams, feedtable[0].feed, 
+    [ {start: moment().subtract('hours', 48).format(), duration: '12hours', interval: 60, limit: 800, interval_type: 'discrete'},
+      {start: moment().subtract('hours', 36).format(), duration: '12hours', interval: 60, limit: 800, interval_type: 'discrete'},
+      {start: moment().subtract('hours', 24).format(), duration: '12hours', interval: 60, limit: 800, interval_type: 'discrete'},
+      {start: moment().subtract('hours', 12).format(), duration: '12hours', interval: 60, limit: 800, interval_type: 'discrete'} ],
+      10);
+  slide3.getAllDataGenSlidingGraphDygraph();
 
 });
 
